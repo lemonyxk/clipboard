@@ -1,6 +1,6 @@
 # clipboard
 
 ---
-BASE UI ![UI](./UI.png)
+BASE UI ![UI](./ui.png)
 
 SEARCH ![SEARCH](./search.png)
