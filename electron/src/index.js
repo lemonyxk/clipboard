@@ -4,13 +4,19 @@ const child = require("child_process");
 const Store = require("electron-store");
 const fs = require("fs");
 
+app.dock.hide();
+
 Store.initRenderer();
 
 var store = new Store();
 
-var lock = path.join(__dirname, "lock");
+var log = path.join(__dirname, "log");
 
-app.dock.hide();
+var access = fs.createWriteStream(log, { flags: "a+" });
+
+process.stdout.write = process.stderr.write = access.write.bind(access);
+
+var lock = path.join(__dirname, "lock");
 
 var maxLength = 1000;
 
