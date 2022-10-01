@@ -19,7 +19,10 @@
 	"config": {
 		"forge": {
 			"packagerConfig": {
-				"icon": "./src/clipboard.icns"
+				"icon": "./src/clipboard.icns",
+				"extendInfo": {
+					"LSUIElement": true
+				}
 			},
 			"makers": [
 				{

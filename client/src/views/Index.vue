@@ -150,14 +150,9 @@ function onKeyEnter(e) {
 	}
 }
 
-.v-overlay {
-	width: 500px;
-	height: 600px;
-}
-
 .middle {
 	width: 100%;
-	height: calc(600px - 48px - 48px);
+	height: calc(100% - 48px - 48px);
 
 	.item {
 		width: 100%;

@@ -1,8 +1,10 @@
-const { app, BrowserWindow, screen, Menu, globalShortcut, nativeImage, Tray, clipboard, ipcMain } = require("electron");
+const { app, BrowserWindow, screen, Menu, globalShortcut, nativeImage, Tray, clipboard, ipcMain, dialog } = require("electron");
 const path = require("path");
 const child = require("child_process");
 const Store = require("electron-store");
 const fs = require("fs");
+
+let dev = !!process.env.NODE_ENV;
 
 app.dock.hide();
 
@@ -10,11 +12,11 @@ Store.initRenderer();
 
 var store = new Store();
 
-var log = path.join(__dirname, "log");
-
-var access = fs.createWriteStream(log, { flags: "a+" });
-
-process.stdout.write = process.stderr.write = access.write.bind(access);
+if (!dev) {
+	var log = path.join(__dirname, "log");
+	var access = fs.createWriteStream(log, { flags: "a+" });
+	process.stdout.write = process.stderr.write = access.write.bind(access);
+}
 
 var lock = path.join(__dirname, "lock");
 
@@ -23,15 +25,25 @@ var maxLength = 1000;
 var data = store.get("data") || [];
 var text = data[0] || "";
 
-let dev = !!process.env.NODE_ENV;
-
 let width = dev ? 1000 : 500;
 let height = dev ? 600 : 600;
 
 class Main {
 	mainWindow = null;
+	aboutWindow = null;
+	settingWindow = null;
 
 	tray = null;
+
+	setting() {
+		if (!dev) {
+			var setting = store.get("setting") || {};
+			app.setLoginItemSettings({
+				openAtLogin: setting.startAtLogin,
+				openAsHidden: true,
+			});
+		}
+	}
 
 	find(pid) {
 		if (process.platform === "win32") {
@@ -61,10 +73,11 @@ class Main {
 		// Some APIs can only be used after this event occurs.
 		app.on("ready", () => {
 			const ret = globalShortcut.register("CommandOrControl+P", () => {
-				if (this.mainWindow.webContents.isDevToolsOpened()) {
-					this.mainWindow.webContents.closeDevTools();
+				var win = BrowserWindow.getFocusedWindow();
+				if (win.webContents.isDevToolsOpened()) {
+					win.webContents.closeDevTools();
 				} else {
-					this.mainWindow.webContents.openDevTools();
+					win.webContents.openDevTools();
 				}
 			});
 
@@ -74,29 +87,115 @@ class Main {
 			console.log("main pid", process.pid);
 			if (this.server) console.log("child pid", this.server.pid);
 
-			this.createWindow();
+			this.setting();
+
+			this.createMainWindow();
+			this.createAboutWindow();
+			this.createSettingWindow();
+
+			this.initTray();
 		});
 
 		// Quit when all windows are closed.
-		app.on("window-all-closed", () => {
-			console.log("on window-all-closed");
-			// On OS X it is common for applications and their menu bar
-			// to stay active until the user quits explicitly with Cmd + Q
-			// if (process.platform !== "darwin") {}
-			this.quit();
-		});
+		// app.on("window-all-closed", () => {
+		// 	console.log("on window-all-closed");
+		// 	// On OS X it is common for applications and their menu bar
+		// 	// to stay active until the user quits explicitly with Cmd + Q
+		// 	// if (process.platform !== "darwin") {}
+		// 	this.quit();
+		// });
 
-		app.on("activate", () => {
-			console.log("on activate");
-			// On OS X it's common to re-create a window in the app when the
-			// dock icon is clicked and there are no other windows open.
-			if (BrowserWindow.getAllWindows().length === 0) {
-				this.createWindow();
-			}
-		});
+		// app.on("activate", () => {
+		// 	console.log("on activate");
+		// 	// On OS X it's common to re-create a window in the app when the
+		// 	// dock icon is clicked and there are no other windows open.
+		// 	if (BrowserWindow.getAllWindows().length === 0) {
+		// 		this.createMainWindow();
+		// 	}
+		// });
 	}
 
-	createWindow() {
+	createSettingWindow() {
+		var settingWindow = new BrowserWindow({
+			width: 300,
+			height: 300,
+			minWidth: 300,
+			minHeight: 300,
+			icon: path.join(__dirname, "clipboard.icns"),
+
+			resizable: true,
+
+			show: false,
+			// transparent: true,
+			// titleBarStyle: "hidden",
+			// titleBarOverlay: true,
+			// frame: false,
+
+			webPreferences: {
+				nodeIntegration: true,
+				enableRemoteModule: true,
+				contextIsolation: false,
+
+				nodeIntegrationInWorker: true,
+			},
+		});
+
+		settingWindow.on("close", (e) => {
+			e.preventDefault();
+			settingWindow.hide();
+		});
+
+		// and load the index.html of the app.
+		if (dev) {
+			settingWindow.loadURL("http://127.0.0.1:8081/#/setting");
+		} else {
+			settingWindow.loadFile(path.join(__dirname, "/dist/index.html"), { hash: "/setting" });
+		}
+
+		this.settingWindow = settingWindow;
+	}
+
+	createAboutWindow() {
+		var aboutWindow = new BrowserWindow({
+			width: 300,
+			height: 300,
+			minWidth: 300,
+			minHeight: 300,
+			icon: path.join(__dirname, "clipboard.icns"),
+
+			resizable: false,
+
+			show: false,
+			// transparent: true,
+			// titleBarStyle: "hidden",
+			// titleBarOverlay: true,
+			// frame: false,
+
+			webPreferences: {
+				nodeIntegration: true,
+				enableRemoteModule: true,
+				contextIsolation: false,
+
+				nodeIntegrationInWorker: true,
+			},
+		});
+
+		aboutWindow.on("close", (e) => {
+			e.preventDefault();
+			aboutWindow.hide();
+		});
+
+		// and load the index.html of the app.
+		if (dev) {
+			aboutWindow.loadURL("http://127.0.0.1:8081/#/about");
+		} else {
+			aboutWindow.loadFile(path.join(__dirname, "/dist/index.html"), { hash: "/about" });
+		}
+
+		this.aboutWindow = aboutWindow;
+	}
+
+	createMainWindow() {
 		// Create the browser window.
 
 		this.mainWindow = new BrowserWindow({
@@ -135,6 +234,7 @@ class Main {
 		});
 
 		this.mainWindow.on("blur", () => {
+			console.log("blur");
 			this.mainWindow.hide();
 		});
 
@@ -152,8 +252,6 @@ class Main {
 
 		// Open the DevTools.
 		if (dev) this.mainWindow.webContents.openDevTools();
-
-		this.initTray();
 	}
 
 	hasInitTray = false;
@@ -165,15 +263,38 @@ class Main {
 
 		const icon = nativeImage.createFromPath(path.join(__dirname, "copy.png"));
 		let tray = new Tray(icon.resize({ width: 16, height: 16 }));
-		const contextMenu = Menu.buildFromTemplate([{ label: "quit", type: "normal", click: () => this.quit() }]);
-		tray.setToolTip("This is my application.");
+		tray.setToolTip("Clipboard Manager");
+
+		const contextMenu = Menu.buildFromTemplate([
+			{
+				label: "Clipboard Preferences",
+				type: "normal",
+				click: () => this.settingWindow.show(),
+			},
+			{ type: "separator" },
+			{
+				label: "About Clipboard",
+				type: "normal",
+				click: () => this.aboutWindow.show(),
+			},
+			{ type: "separator" },
+			{ label: "Quit Clipboard", type: "normal", click: () => this.quit() },
+		]);
+
+		contextMenu.on("menu-will-close", () => {
+			// console.log("menu will close");
+			tray.setContextMenu(null);
+			this.mainWindow.hide();
+		});
 
 		tray.on("right-click", () => {
+			// console.log("right click");
 			tray.setContextMenu(contextMenu);
 			tray.popUpContextMenu();
 		});
 
 		tray.on("click", (e, b, p) => {
+			// console.log("click");
 			tray.setContextMenu(null);
 			var x = b.x;
 			var y = b.y;
@@ -190,6 +311,11 @@ class Main {
 				}
 			}
 			this.mainWindow.show();
+		});
+
+		ipcMain.on("setting", (e, data) => {
+			store.set("setting", data);
+			this.setting();
 		});
 
 		ipcMain.on("hide-window", () => {
@@ -218,7 +344,7 @@ class Main {
 		try {
 			fs.rmSync(lock);
 		} catch (error) {}
-		app.quit();
+		app.exit();
 	}
 
 	start() {

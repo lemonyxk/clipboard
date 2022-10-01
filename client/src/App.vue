@@ -4,8 +4,8 @@
 
 <style lang="scss">
 html {
-	width: 500px;
-	height: 600px;
+	width: 100%;
+	height: 100%;
 	overflow: hidden;
 	background-color: #efefef;
 	font-family: "Gill Sans", sans-serif;
