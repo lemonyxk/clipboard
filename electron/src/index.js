@@ -6,7 +6,7 @@ const fs = require("fs");
 
 let dev = !!process.env.NODE_ENV;
 
-app.dock.hide();
+// app.dock.hide();
 
 Store.initRenderer();
 
@@ -130,6 +130,8 @@ class Main {
 			// titleBarStyle: "hidden",
 			// titleBarOverlay: true,
 			// frame: false,
+			alwaysOnTop: true,
+			skipTaskbar: true,
 
 			webPreferences: {
 				nodeIntegration: true,
@@ -170,6 +172,8 @@ class Main {
 			// titleBarStyle: "hidden",
 			// titleBarOverlay: true,
 			// frame: false,
+			alwaysOnTop: true,
+			skipTaskbar: true,
 
 			webPreferences: {
 				nodeIntegration: true,
@@ -212,6 +216,8 @@ class Main {
 			// titleBarStyle: "hidden",
 			// titleBarOverlay: true,
 			frame: false,
+			alwaysOnTop: true,
+			skipTaskbar: true,
 
 			webPreferences: {
 				nodeIntegration: true,
@@ -240,7 +246,6 @@ class Main {
 
 		this.mainWindow.webContents.on("dom-ready", () => {
 			console.log("dom-ready");
-			this.initTray();
 		});
 
 		// and load the index.html of the app.
@@ -295,9 +300,14 @@ class Main {
 
 		tray.on("click", (e, b, p) => {
 			// console.log("click");
+
 			tray.setContextMenu(null);
 			var x = b.x;
 			var y = b.y;
+
+			if (process.platform == "win32") {
+				y = size.height - height - b.height;
+			}
 
 			if (size.width - x < width) {
 				x = size.width - width;
@@ -384,6 +394,8 @@ class Main {
 			];
 			Menu.setApplicationMenu(Menu.buildFromTemplate(template));
 		} else {
+			// tray flicker
+			app.commandLine.appendSwitch("wm-window-animations-disabled");
 			Menu.setApplicationMenu(null);
 		}
 

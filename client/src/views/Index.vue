@@ -165,13 +165,14 @@ function onKeyEnter(e) {
 		&:hover {
 			background-color: burlywood;
 		}
+
 		.title {
-			width: 110px;
+			width: 130px;
 			height: 100%;
 		}
 
 		.value {
-			width: calc(100% - 110px);
+			width: calc(100% - 130px);
 			height: 100%;
 			text-overflow: ellipsis;
 			white-space: nowrap;
