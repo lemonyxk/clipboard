@@ -338,6 +338,7 @@ class Main {
 
 		setInterval(() => {
 			var nText = clipboard.readText("clipboard");
+			if (nText == "") return;
 			if (text != nText) {
 				text = nText;
 				data.unshift({ text, time: Date.now() });

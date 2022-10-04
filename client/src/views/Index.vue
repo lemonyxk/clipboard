@@ -101,6 +101,12 @@ function onKeyEnter(e) {
 	if (e.code == "Enter") onSearch(e);
 }
 
+function onBlur(e) {
+	if (searchText.value == "") {
+		resetSearch();
+	}
+}
+
 //
 </script>
 
@@ -119,6 +125,7 @@ function onKeyEnter(e) {
 			@click:clear="resetSearch"
 			@click:append-inner="onSearch"
 			@keydown="onKeyEnter"
+			@blur="onBlur"
 		></v-text-field>
 	</div>
 
