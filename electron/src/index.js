@@ -1,4 +1,4 @@
-const { app, BrowserWindow, screen, Menu, globalShortcut, nativeImage, Tray, clipboard, ipcMain, dialog } = require("electron");
+const { app, BrowserWindow, screen, Menu, globalShortcut, nativeImage, Tray, clipboard, ipcMain } = require("electron");
 const path = require("path");
 const child = require("child_process");
 const Store = require("electron-store");
@@ -74,6 +74,7 @@ class Main {
 		app.on("ready", () => {
 			const ret = globalShortcut.register("CommandOrControl+P", () => {
 				var win = BrowserWindow.getFocusedWindow();
+				if (!win) return;
 				if (win.webContents.isDevToolsOpened()) {
 					win.webContents.closeDevTools();
 				} else {
@@ -266,8 +267,8 @@ class Main {
 
 		let size = screen.getPrimaryDisplay().size;
 
-		const icon = nativeImage.createFromPath(path.join(__dirname, "copy.png"));
-		let tray = new Tray(icon.resize({ width: 16, height: 16 }));
+		const icon = nativeImage.createFromPath(path.join(__dirname, "copyTemplate.png"));
+		let tray = new Tray(icon);
 		tray.setToolTip("Clipboard Manager");
 
 		const contextMenu = Menu.buildFromTemplate([
