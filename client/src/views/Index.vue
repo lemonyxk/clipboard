@@ -2,13 +2,23 @@
 import { onMounted, ref } from "vue";
 import dayjs from "dayjs";
 const { ipcRenderer, clipboard } = window.require("electron");
+const Store = window.require("electron-store");
+const store = new Store();
 
 onMounted(() => {});
+
+var setting = store.get("setting") || {};
+var clickToCopy = ref(setting.clickToCopy);
 
 var maxLength = 1000;
 var data = ref([]);
 var items = ref([]);
 var searchData = ref([]);
+
+ipcRenderer.on("mainWindow-focus", (e, v) => {
+	var setting = store.get("setting") || {};
+	clickToCopy.value = setting.clickToCopy;
+});
 
 ipcRenderer.send("init-clipboard");
 ipcRenderer.on("init-clipboard", (e, v) => {
@@ -98,7 +108,10 @@ function onSearch(e) {
 }
 
 function onKeyEnter(e) {
-	if (e.code == "Enter") onSearch(e);
+	if (e.code == "Escape") return e.target.blur();
+	if (e.code == "Enter") return onSearch(e);
+	if (e.code == "NumpadEnter") return onSearch(e);
+	if (e.code == "NumpadEnter") return onSearch(e);
 }
 
 function onBlur(e) {
@@ -132,7 +145,8 @@ function onBlur(e) {
 	<div class="middle">
 		<div class="item" v-for="(item, i) in items" :key="i">
 			<div class="title">{{ item.time }}</div>
-			<div class="value" @dblclick="onSelect(item)">{{ item.text }}</div>
+			<div v-if="clickToCopy" class="value" @click="onSelect(item)">{{ item.text }}</div>
+			<div v-else class="value" @dblclick="onSelect(item)">{{ item.text }}</div>
 		</div>
 	</div>
 	<div class="bottom">
