@@ -1,22 +1,24 @@
-const { app, BrowserWindow, screen, Menu, globalShortcut, nativeImage, Tray, clipboard, ipcMain } = require("electron");
+const { app, BrowserWindow, powerMonitor, screen, Menu, globalShortcut, nativeImage, Tray, clipboard, ipcMain } = require("electron");
 const path = require("path");
-const child = require("child_process");
 const Store = require("electron-store");
 const fs = require("fs");
 
 let dev = !!process.env.NODE_ENV;
+
+if (!dev) {
+	var log = path.join(__dirname, "log");
+	var fd = fs.openSync(log, "a+");
+	var consoleFn = console.log;
+	console.log = (...args) => {
+		fs.writeSync(fd, args.toString() + "\n");
+	};
+}
 
 // app.dock.hide();
 
 Store.initRenderer();
 
 var store = new Store();
-
-if (!dev) {
-	var log = path.join(__dirname, "log");
-	var access = fs.createWriteStream(log, { flags: "a+" });
-	process.stdout.write = process.stderr.write = access.write.bind(access);
-}
 
 var lock = path.join(__dirname, "lock");
 
@@ -46,20 +48,19 @@ class Main {
 	}
 
 	find(pid) {
-		if (process.platform === "win32") {
-			return child.execSync(`tasklist | findstr ${pid}`);
-		} else {
-			return child.execSync(`ps axu | grep -v grep | grep ${pid}`);
+		try {
+			return process.kill(pid, 0);
+		} catch (e) {
+			return e.code === "EPERM";
 		}
 	}
 
 	checkSingle() {
 		if (fs.existsSync(lock)) {
-			try {
-				var pid = fs.readFileSync(lock).toString();
-				this.find(pid);
+			var pid = fs.readFileSync(lock).toString();
+			if (this.find(parseInt(pid))) {
 				return false;
-			} catch (error) {}
+			}
 		}
 
 		fs.writeFileSync(lock, `${process.pid}`);
@@ -203,7 +204,7 @@ class Main {
 	createMainWindow() {
 		// Create the browser window.
 
-		this.mainWindow = new BrowserWindow({
+		var mainWindow = new BrowserWindow({
 			width: width,
 			height: height,
 			minWidth: width,
@@ -234,36 +235,41 @@ class Main {
 		// 	this.mainWindow.show();
 		// });
 
-		this.mainWindow.on("close", () => {
+		mainWindow.on("close", () => {
 			console.log("close");
-			this.mainWindow.hide();
+			mainWindow.hide();
 			this.quit();
 		});
 
-		this.mainWindow.on("blur", () => {
+		mainWindow.on("blur", () => {
 			console.log("blur");
-			this.mainWindow.hide();
+			mainWindow.hide();
 		});
 
-		this.mainWindow.webContents.on("dom-ready", () => {
+		mainWindow.on("focus", () => {
+			console.log("focus");
+			mainWindow.webContents.send("mainWindow-focus");
+		});
+
+		mainWindow.webContents.on("dom-ready", () => {
 			console.log("dom-ready");
 		});
 
 		// and load the index.html of the app.
 		if (dev) {
-			this.mainWindow.loadURL("http://127.0.0.1:8081");
+			mainWindow.loadURL("http://127.0.0.1:8081");
 		} else {
-			this.mainWindow.loadFile(path.join(__dirname, "/dist/index.html"));
+			mainWindow.loadFile(path.join(__dirname, "/dist/index.html"));
 		}
 
 		// Open the DevTools.
-		if (dev) this.mainWindow.webContents.openDevTools();
+		if (dev) mainWindow.webContents.openDevTools();
+
+		this.mainWindow = mainWindow;
 	}
 
-	hasInitTray = false;
 	initTray() {
-		if (this.hasInitTray) return;
-		this.hasInitTray = true;
+		if (this.tray) return;
 
 		let size = screen.getPrimaryDisplay().size;
 
@@ -347,6 +353,11 @@ class Main {
 				this.mainWindow.webContents.send("update-clipboard", { text, time: Date.now() });
 			}
 		}, 500);
+
+		powerMonitor.on("lock-screen", () => {
+			console.log("lock-screen");
+			store.set("data", data);
+		});
 
 		this.tray = tray;
 	}
