@@ -1,7 +1,8 @@
-const { app, BrowserWindow, powerMonitor, screen, Menu, globalShortcut, nativeImage, Tray, clipboard, ipcMain } = require("electron");
+const { app, BrowserWindow, powerMonitor, screen, Menu, globalShortcut, nativeImage, Tray, clipboard, ipcMain, ipcRenderer } = require("electron");
 const path = require("path");
 const Store = require("electron-store");
 const fs = require("fs");
+const lib = require("./lib");
 
 let dev = !!process.env.NODE_ENV;
 
@@ -14,8 +15,6 @@ if (!dev) {
 	};
 }
 
-// app.dock.hide();
-
 Store.initRenderer();
 
 var store = new Store();
@@ -25,9 +24,11 @@ var lock = path.join(__dirname, "lock");
 var maxLength = 1000;
 
 var data = store.get("data") || [];
+var files = store.get("files") || [];
 var text = data[0] || "";
+var file = files[0] ? [files[0]] : [];
 
-let width = dev ? 1000 : 500;
+let width = dev ? 1200 : 700;
 let height = dev ? 600 : 600;
 
 class Main {
@@ -96,6 +97,7 @@ class Main {
 			this.createSettingWindow();
 
 			this.initTray();
+			this.ipcMain();
 		});
 
 		// Quit when all windows are closed.
@@ -147,6 +149,15 @@ class Main {
 		settingWindow.on("close", (e) => {
 			e.preventDefault();
 			settingWindow.hide();
+			settingWindow.webContents.send("settingWindow-close");
+		});
+
+		settingWindow.on("blur", (e) => {
+			settingWindow.webContents.send("settingWindow-blur");
+		});
+
+		settingWindow.on("focus", (e) => {
+			settingWindow.webContents.send("settingWindow-focus");
 		});
 
 		// and load the index.html of the app.
@@ -189,6 +200,15 @@ class Main {
 		aboutWindow.on("close", (e) => {
 			e.preventDefault();
 			aboutWindow.hide();
+			aboutWindow.webContents.send("aboutWindow-close");
+		});
+
+		aboutWindow.on("blur", (e) => {
+			aboutWindow.webContents.send("aboutWindow-blur");
+		});
+
+		aboutWindow.on("focus", (e) => {
+			aboutWindow.webContents.send("aboutWindow-focus");
 		});
 
 		// and load the index.html of the app.
@@ -230,24 +250,18 @@ class Main {
 			},
 		});
 
-		// this.mainWindow.webContents.on("ready-to-show", () => {
-		// 	console.log("ready-to-show");
-		// 	this.mainWindow.show();
-		// });
-
-		mainWindow.on("close", () => {
-			console.log("close");
+		mainWindow.on("close", (e) => {
+			if (dev) return this.quit();
+			e.preventDefault();
 			mainWindow.hide();
-			this.quit();
+			mainWindow.webContents.send("mainWindow-close");
 		});
 
-		mainWindow.on("blur", () => {
-			console.log("blur");
-			mainWindow.hide();
+		mainWindow.on("blur", (e) => {
+			mainWindow.webContents.send("mainWindow-blur");
 		});
 
-		mainWindow.on("focus", () => {
-			console.log("focus");
+		mainWindow.on("focus", (e) => {
 			mainWindow.webContents.send("mainWindow-focus");
 		});
 
@@ -316,23 +330,85 @@ class Main {
 				y = size.height - height - b.height;
 			}
 
-			if (size.width - x < width) {
-				x = size.width - width;
+			if (x - width / 2 < 0) {
+				x = 0;
 				this.mainWindow.setPosition(x, y);
 			} else {
-				if (x - width / 2 < 0) {
-					x = 0;
-					this.mainWindow.setPosition(x, y);
-				} else {
-					this.mainWindow.setPosition(x - width / 2, y);
-				}
+				this.mainWindow.setPosition(x - width / 2, y);
 			}
+
+			// if (size.width - x < width) {
+			// 	x = size.width - width;
+			// 	this.mainWindow.setPosition(x, y);
+			// } else {
+			// 	if (x - width / 2 < 0) {
+			// 		x = 0;
+			// 		this.mainWindow.setPosition(x, y);
+			// 	} else {
+			// 		this.mainWindow.setPosition(x - width / 2, y);
+			// 	}
+			// }
+
 			this.mainWindow.show();
+		});
+
+		setInterval(() => {
+			var fList = [];
+			if (process.platform == "darwin") {
+				var pList = clipboard.read("NSFilenamesPboardType");
+				fList = lib.parsePList(pList);
+			} else {
+				const clipboardEx = require("electron-clipboard-ex");
+				fList = clipboardEx.readFilePaths();
+			}
+
+			if (fList.length != 0 && !lib.compare(fList, file)) {
+				file = fList;
+				for (let i = 0; i < file.length; i++) {
+					files.unshift({ file: file[i], time: Date.now() });
+				}
+				if (files.length > maxLength) files.splice(maxLength);
+				this.mainWindow.webContents.send("update-clipboard-files", { file, time: Date.now() });
+
+				// stop read text
+				text = clipboard.readText("clipboard");
+				return;
+			}
+
+			var nText = clipboard.readText("clipboard");
+			if (nText != "" && text != nText) {
+				text = nText;
+				data.unshift({ text, time: Date.now() });
+				if (data.length > maxLength) data.splice(maxLength);
+				this.mainWindow.webContents.send("update-clipboard", { text, time: Date.now() });
+			}
+		}, 500);
+
+		this.tray = tray;
+	}
+
+	ipcMain() {
+		powerMonitor.on("lock-screen", () => {
+			console.log("lock-screen");
+			store.set("data", data);
 		});
 
 		ipcMain.on("setting", (e, data) => {
 			store.set("setting", data);
 			this.setting();
+		});
+
+		ipcMain.on("clipboard-text", (e, text) => {
+			clipboard.writeText(text, "clipboard");
+		});
+
+		ipcMain.on("clipboard-file", (e, file) => {
+			if (process.platform == "darwin") {
+				lib.writeFiles([file]);
+			} else {
+				const clipboardEx = require("electron-clipboard-ex");
+				clipboardEx.writeFilePaths([file]);
+			}
 		});
 
 		ipcMain.on("hide-window", () => {
@@ -343,27 +419,14 @@ class Main {
 			this.mainWindow.webContents.send("init-clipboard", data);
 		});
 
-		setInterval(() => {
-			var nText = clipboard.readText("clipboard");
-			if (nText == "") return;
-			if (text != nText) {
-				text = nText;
-				data.unshift({ text, time: Date.now() });
-				if (data.length > maxLength) data.splice(maxLength);
-				this.mainWindow.webContents.send("update-clipboard", { text, time: Date.now() });
-			}
-		}, 500);
-
-		powerMonitor.on("lock-screen", () => {
-			console.log("lock-screen");
-			store.set("data", data);
+		ipcMain.on("init-clipboard-files", () => {
+			this.mainWindow.webContents.send("init-clipboard-files", files);
 		});
-
-		this.tray = tray;
 	}
 
 	quit() {
 		store.set("data", data);
+		store.set("files", files);
 		try {
 			fs.rmSync(lock);
 		} catch (error) {}
