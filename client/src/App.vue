@@ -8,6 +8,7 @@ html {
 	height: 100%;
 	overflow: hidden;
 	background-color: #efefef;
+	// font-family: caption;
 	font-family: "Gill Sans", sans-serif;
 }
 

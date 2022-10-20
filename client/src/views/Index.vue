@@ -1,116 +1,41 @@
 <script setup>
-import { onMounted, ref } from "vue";
-import dayjs from "dayjs";
-const { ipcRenderer, clipboard } = window.require("electron");
-const Store = window.require("electron-store");
-const store = new Store();
+import { useRouter } from "vue-router";
+import { ref } from "vue";
+import { subscription } from "../lib/subscription";
+import pin from "@/assets/pin.svg";
+import pined from "@/assets/pined.svg";
+import document from "@/assets/document.svg";
+import documented from "@/assets/documented.svg";
+import text from "@/assets/text.svg";
+import texted from "@/assets/texted.svg";
 
-onMounted(() => {});
+var router = useRouter();
 
-var setting = store.get("setting") || {};
-var clickToCopy = ref(setting.clickToCopy);
+var show = ref(false);
+subscription.wait().then(() => (show.value = true));
 
-var maxLength = 1000;
-var data = ref([]);
-var items = ref([]);
-var searchData = ref([]);
-
-ipcRenderer.on("mainWindow-focus", (e, v) => {
-	var setting = store.get("setting") || {};
-	clickToCopy.value = setting.clickToCopy;
-});
-
-ipcRenderer.send("init-clipboard");
-ipcRenderer.on("init-clipboard", (e, v) => {
-	for (let i = 0; i < v.length; i++) {
-		data.value.push(v[i]);
-	}
-	if (data.value.length > maxLength) data.value.splice(maxLength);
-	items.value = data.value.slice(0, 15);
-	formatItems();
-});
-
-function updateItems(res) {
-	items.value = res.value.slice(0, 15);
-	formatItems();
-}
-
-var page = ref(1);
-function changeItemsPage(res) {
-	items.value = res.value.slice((page.value - 1) * 15, (page.value - 1) * 15 + 15);
-	formatItems();
-}
-
-function formatItems() {
-	var res = [];
-	for (let i = 0; i < items.value.length; i++) {
-		const element = items.value[i];
-		res.push({ text: element.text, time: dayjs(element.time).format("MM-DD HH:mm:ss") });
-	}
-	items.value = res;
-}
-
-function getResLen(res) {
-	return parseInt(res.value.length / 15) + 1;
-}
-
-ipcRenderer.on("update-clipboard", (e, v) => {
-	data.value.unshift(v);
-	if (data.value.length > maxLength) data.value.splice(maxLength);
-	if (mode == "normal") updateItems(data);
-});
-
-function onPageChange(e) {
-	if (mode == "normal") {
-		changeItemsPage(data);
-	} else {
-		changeItemsPage(searchData);
-	}
-}
-
-function getLength() {
-	if (mode == "normal") {
-		return getResLen(data);
-	} else {
-		return getResLen(searchData);
-	}
-}
-
-function onSelect(item) {
-	clipboard.writeText(item.text, "clipboard");
-	ipcRenderer.send("hide-window");
-}
-
+var input = ref();
 var searchText = ref("");
-var mode = "normal";
-function resetSearch() {
-	mode = "normal";
-	page.value = 1;
-	updateItems(data);
+function resetSearch(e) {
+	router.push({ path: "/" + path });
+	return input.value.blur();
 }
 
 function onSearch(e) {
 	if (searchText.value == "") {
 		resetSearch();
-		return e.target.blur();
+		return input.value.blur();
 	}
 
-	mode = "search";
-	searchData.value = [];
-	for (let i = 0; i < data.value.length; i++) {
-		const element = data.value[i];
-		if (element.text?.includes(searchText.value)) {
-			searchData.value.push(element);
-		}
-	}
-	page.value = 1;
-	updateItems(searchData);
+	var p = path == "normal" ? "search" : "filesSearch";
+	router.push({ path: "/" + p, query: { text: searchText.value } }).then(() => {
+		subscription.emit(p, searchText.value);
+	});
 }
 
 function onKeyEnter(e) {
 	if (e.code == "Escape") return e.target.blur();
 	if (e.code == "Enter") return onSearch(e);
-	if (e.code == "NumpadEnter") return onSearch(e);
 	if (e.code == "NumpadEnter") return onSearch(e);
 }
 
@@ -120,94 +45,155 @@ function onBlur(e) {
 	}
 }
 
+var isPin = ref(false);
+function onPin() {
+	isPin.value = !isPin.value;
+	subscription.config().pin = isPin.value;
+}
+
+var path = "normal";
+
+var isDocument = ref(false);
+function onDocument() {
+	isDocument.value = true;
+	isText.value = false;
+
+	path = "files";
+	router.push({ path: "/files" });
+}
+
+var isText = ref(true);
+function onText() {
+	isText.value = true;
+	isDocument.value = false;
+
+	path = "normal";
+	router.push({ path: "/normal" });
+}
+
 //
 </script>
 
 <template>
-	<div class="top">
-		<v-text-field
-			v-model="searchText"
-			density="compact"
-			variant="solo"
-			label="search"
-			append-inner-icon="mdi-magnify"
-			clearable
-			single-line
-			hide-details
-			spellcheck="false"
-			@click:clear="resetSearch"
-			@click:append-inner="onSearch"
-			@keydown="onKeyEnter"
-			@blur="onBlur"
-		></v-text-field>
-	</div>
-
-	<div class="middle">
-		<div class="item" v-for="(item, i) in items" :key="i">
-			<div class="title">{{ item.time }}</div>
-			<div v-if="clickToCopy" class="value" @click="onSelect(item)">{{ item.text }}</div>
-			<div v-else class="value" @dblclick="onSelect(item)">{{ item.text }}</div>
+	<div class="index">
+		<div class="top">
+			<v-text-field
+				v-model="searchText"
+				density="compact"
+				variant="solo"
+				label="search"
+				append-inner-icon="mdi-magnify"
+				clearable
+				single-line
+				hide-details
+				spellcheck="false"
+				ref="input"
+				@click:clear="resetSearch"
+				@click:append-inner="onSearch"
+				@keydown="onKeyEnter"
+				@blur="onBlur"
+			></v-text-field>
 		</div>
-	</div>
-	<div class="bottom">
-		<v-pagination v-model="page" :length="getLength()" :total-visible="6" density="compact" v-on:update:model-value="onPageChange"></v-pagination>
+
+		<div class="middle">
+			<div class="left">
+				<div class="text" v-if="isText"><img :src="texted" @click="onText" title="Text Mode" /></div>
+				<div class="text" v-else><img :src="text" @click="onText" title="Document Mode" /></div>
+
+				<div class="document" v-if="isDocument"><img :src="documented" @click="onDocument" title="Document Mode" /></div>
+				<div class="document" v-else><img :src="document" @click="onDocument" title="Text Mode" /></div>
+
+				<div class="pin" v-if="isPin"><img :src="pined" @click="onPin" title="UnPin" /></div>
+				<div class="pin" v-else><img :src="pin" @click="onPin" title="Pined" /></div>
+			</div>
+
+			<div class="right">
+				<router-view v-slot="{ Component }" v-if="show">
+					<keep-alive>
+						<component :is="Component" />
+					</keep-alive>
+				</router-view>
+			</div>
+		</div>
 	</div>
 
 	<!-- <v-snackbar :timeout="1500" v-model="open" location="top"> copy success </v-snackbar> -->
 </template>
 
 <style scoped lang="scss">
-.top {
+.index {
 	width: 100%;
-	height: 48px;
+	height: 100%;
 	display: flex;
 	justify-content: center;
 	align-items: flex-start;
-	.v-input {
-		::v-deep .v-input__control .v-field {
-			background-color: rgb(60, 105, 202);
-			color: white;
-		}
-	}
-}
+	flex-direction: column;
 
-.middle {
-	width: 100%;
-	height: calc(100% - 48px - 48px);
-
-	.item {
+	.top {
 		width: 100%;
-		height: calc(100% / 15);
-		justify-content: flex-start;
+		height: 42px;
 		display: flex;
-		align-items: center;
-		padding: 5px;
-		cursor: pointer;
-		&:hover {
-			background-color: burlywood;
-		}
+		justify-content: center;
+		align-items: flex-start;
 
-		.title {
-			width: 130px;
-			height: 100%;
-		}
-
-		.value {
-			width: calc(100% - 130px);
-			height: 100%;
-			text-overflow: ellipsis;
-			white-space: nowrap;
-			overflow: hidden;
-			font-weight: 600;
+		.v-input {
+			::v-deep .v-input__control .v-field {
+				background-color: rgb(60, 105, 202);
+				color: white;
+				border-radius: 0;
+			}
 		}
 	}
-}
 
-.bottom {
-	width: 100%;
-	height: 48px;
-	display: flex;
-	justify-content: center;
-	align-items: flex-end;
+	.middle {
+		width: 100%;
+		height: calc(100% - 42px);
+		display: flex;
+		justify-content: center;
+		align-items: flex-start;
+		position: relative;
+
+		.right {
+			// width: calc(100% - 24px);
+			width: 100%;
+			height: 100%;
+		}
+
+		.left {
+			// width: 24px;
+			// height: 100%;
+			// display: flex;
+			// justify-content: flex-start;
+			// align-items: center;
+			// flex-direction: column;
+
+			width: 200px;
+			height: 38px;
+			display: flex;
+			justify-content: flex-end;
+			align-items: center;
+			// flex-direction: column;
+
+			position: absolute;
+			bottom: 0;
+			right: 0;
+
+			div {
+				width: 18px;
+				height: 18px;
+				display: flex;
+				justify-content: center;
+				align-items: center;
+				margin: 0 10px;
+
+				img {
+					width: 18px;
+					height: 18px;
+					-webkit-user-drag: none;
+					cursor: pointer;
+				}
+			}
+		}
+	}
 }
 </style>

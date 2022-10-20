@@ -13,17 +13,20 @@
 
 <script setup>
 import { ref } from "vue";
-const { ipcRenderer } = window.require("electron");
-const Store = window.require("electron-store");
-const store = new Store();
+import { subscription } from "../lib/subscription";
+import { on, send } from "../lib/ipc";
 
-var setting = store.get("setting") || {};
-
+var setting = subscription.setting();
 var startAtLogin = ref(setting.startAtLogin);
 var clickToCopy = ref(setting.clickToCopy);
 
+subscription.on("setting", (setting) => {
+	startAtLogin.value = setting.startAtLogin;
+	clickToCopy.value = setting.clickToCopy;
+});
+
 function change() {
-	ipcRenderer.send("setting", {
+	send("setting", {
 		startAtLogin: startAtLogin.value,
 		clickToCopy: clickToCopy.value,
 	});
