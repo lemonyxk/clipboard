@@ -353,14 +353,7 @@ class Main {
 		});
 
 		setInterval(() => {
-			var fList = [];
-			if (process.platform == "darwin") {
-				var pList = clipboard.read("NSFilenamesPboardType");
-				fList = lib.parsePList(pList);
-			} else {
-				const clipboardEx = require("electron-clipboard-ex");
-				fList = clipboardEx.readFilePaths();
-			}
+			var fList = lib.readFiles();
 
 			if (fList.length != 0 && !lib.compare(fList, file)) {
 				file = fList;
@@ -403,12 +396,7 @@ class Main {
 		});
 
 		ipcMain.on("clipboard-file", (e, file) => {
-			if (process.platform == "darwin") {
-				lib.writeFiles([file]);
-			} else {
-				const clipboardEx = require("electron-clipboard-ex");
-				clipboardEx.writeFilePaths([file]);
-			}
+			lib.writeFiles([file]);
 		});
 
 		ipcMain.on("hide-window", () => {

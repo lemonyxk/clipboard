@@ -51,6 +51,18 @@ function formatPList(arr) {
 	return str;
 }
 
+function readFiles() {
+	var fList = [];
+	if (process.platform == "darwin") {
+		var pList = clipboard.read("NSFilenamesPboardType");
+		fList = parsePList(pList);
+	} else {
+		const clipboardEx = require("electron-clipboard-ex");
+		fList = clipboardEx.readFilePaths();
+	}
+	return fList;
+}
+
 function writeFiles(arr) {
 	if (arr.length == 0) return;
 
@@ -60,27 +72,15 @@ function writeFiles(arr) {
 			return;
 		}
 
-		var str = formatPList(arr);
-		if (str == "") return;
-
-		clipboard.writeBuffer("NSFilenamesPboardType", Buffer.from(str));
-		// clipboard.writeBuffer("NSStringPboardType", Buffer.from("hello world"));
+		if (process.platform == "darwin") {
+			var str = formatPList(arr);
+			if (str == "") return;
+			clipboard.writeBuffer("NSFilenamesPboardType", Buffer.from(str));
+		} else {
+			const clipboardEx = require("electron-clipboard-ex");
+			clipboardEx.writeFilePaths([file]);
+		}
 	});
 }
 
-module.exports = { formatPList, parsePList, compare, writeFiles };
-
-// clipboard.writeBuffer("public.utf8-plain-text", Buffer.from(`hello world`));
-
-// clipboard.readBuffer('CF_HDROP').toString('ucs2')
-// var files = clipboard.read("NSFilenamesPboardType");
-// console.log(files);
-
-// var nImg = clipboard.readImage("clipboard");
-// if (nImg.isEmpty()) return;
-// if (img != nImg.toDataURL()) {
-// 	img = nImg.toDataURL();
-// 	image.unshift({ img, time: Date.now() });
-// 	if (image.length > maxLength) image.splice(maxLength);
-// 	this.mainWindow.webContents.send("update-clipboard-image", { img, time: Date.now() });
-// }
+module.exports = { compare, writeFiles, readFiles };
