@@ -8,6 +8,8 @@ import document from "@/assets/document.svg";
 import documented from "@/assets/documented.svg";
 import text from "@/assets/text.svg";
 import texted from "@/assets/texted.svg";
+import heart from "@/assets/heart.svg";
+import hearted from "@/assets/hearted.svg";
 
 var router = useRouter();
 
@@ -16,33 +18,32 @@ subscription.wait().then(() => (show.value = true));
 
 var input = ref();
 var searchText = ref("");
-function resetSearch(e) {
+
+function resetSearch() {
+	searchText.value = "";
+	input.value.blur();
+
 	router.push({ path: "/" + path });
-	return input.value.blur();
 }
 
-function onSearch(e) {
-	if (searchText.value == "") {
-		resetSearch();
-		return input.value.blur();
-	}
+function onSearch() {
+	if (searchText.value == "") return resetSearch();
 
-	var p = path == "normal" ? "search" : "filesSearch";
-	router.push({ path: "/" + p, query: { text: searchText.value } }).then(() => {
-		subscription.emit(p, searchText.value);
+	input.value.blur();
+	router.push({ path: `/${path}-search` }).then(() => {
+		subscription.emit(`${path}-search`, { text: searchText.value, favorite: isFavorite.value });
 	});
 }
 
 function onKeyEnter(e) {
-	if (e.code == "Escape") return e.target.blur();
-	if (e.code == "Enter") return onSearch(e);
-	if (e.code == "NumpadEnter") return onSearch(e);
+	e.stopPropagation();
+	if (e.code == "Escape") return resetSearch();
+	if (e.code == "Enter") return onSearch();
+	if (e.code == "NumpadEnter") return onSearch();
 }
 
 function onBlur(e) {
-	if (searchText.value == "") {
-		resetSearch();
-	}
+	if (searchText.value == "") return resetSearch();
 }
 
 var isPin = ref(false);
@@ -51,15 +52,16 @@ function onPin() {
 	subscription.config().pin = isPin.value;
 }
 
-var path = "normal";
+var path = "text";
 
 var isDocument = ref(false);
 function onDocument() {
 	isDocument.value = true;
 	isText.value = false;
 
-	path = "files";
-	router.push({ path: "/files" });
+	searchText.value = "";
+	path = "file";
+	router.push({ path: "/file" });
 }
 
 var isText = ref(true);
@@ -67,9 +69,24 @@ function onText() {
 	isText.value = true;
 	isDocument.value = false;
 
-	path = "normal";
-	router.push({ path: "/normal" });
+	searchText.value = "";
+	path = "text";
+	router.push({ path: "/text" });
 }
+
+var isFavorite = ref(false);
+function onFavorite() {
+	isFavorite.value = !isFavorite.value;
+	subscription.config().favorite = isFavorite.value;
+	subscription.emit(`favorite-${path}`);
+}
+
+subscription.on("onkeydown", (e) => {
+	if (e.code == "Tab") return input.value.focus();
+	if (e.code == "Escape") return resetSearch();
+	if (e.code == "Enter") return onSearch();
+	if (e.code == "NumpadEnter") return onSearch();
+});
 
 //
 </script>
@@ -102,6 +119,9 @@ function onText() {
 
 				<div class="document" v-if="isDocument"><img :src="documented" @click="onDocument" title="Document Mode" /></div>
 				<div class="document" v-else><img :src="document" @click="onDocument" title="Text Mode" /></div>
+
+				<div class="favorite" v-if="isFavorite"><img :src="hearted" @click="onFavorite" title="Favorite Mode" /></div>
+				<div class="favorite" v-else><img :src="heart" @click="onFavorite" title="Favorite Mode" /></div>
 
 				<div class="pin" v-if="isPin"><img :src="pined" @click="onPin" title="UnPin" /></div>
 				<div class="pin" v-else><img :src="pin" @click="onPin" title="Pined" /></div>
@@ -170,7 +190,7 @@ function onText() {
 			width: 200px;
 			height: 38px;
 			display: flex;
-			justify-content: flex-end;
+			justify-content: center;
 			align-items: center;
 			// flex-direction: column;
 

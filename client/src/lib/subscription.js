@@ -1,77 +1,42 @@
 import { send, on } from "./ipc";
 import { store } from "./store";
-import { getCurrentInstance, ref } from "vue";
+import { getCurrentInstance } from "vue";
 
-var maxLength = 1000;
-
-var setting = store.get("setting") || {};
-var data = [];
-var files = [];
 var onList = {};
-var config = {
-	pin: false,
+var config = { pin: false, favorite: false };
+
+window.onkeydown = (e) => {
+	e.preventDefault();
+	subscription.emit("onkeydown", e);
 };
 
-on("mainWindow-focus", (e, v) => {
-	setting = store.get("setting") || {};
+on("mainWindow-hide", (e, v) => {
+	subscription.emit("mainWindow-hide");
+});
 
-	subscription.emit("setting", setting);
+on("mainWindow-focus", (e, v) => {
+	subscription.emit("mainWindow-focus");
 });
 
 on("mainWindow-blur", (e, v) => {
+	subscription.emit("mainWindow-blur");
 	if (!config.pin) send("hide-window");
 });
 
-function initClipboard(v) {
-	data = v;
-	if (data.length > maxLength) data.splice(maxLength);
-}
-
-function initClipboardFiles(v) {
-	files = v;
-	if (files.length > maxLength) files.splice(maxLength);
-}
-
-on("update-clipboard", (e, v) => {
-	data.unshift(v);
-	if (data.length > maxLength) data.splice(maxLength);
-
+on("update-clipboard-text", (e, v) => {
 	subscription.emit("data", v);
 });
 
-on("update-clipboard-files", (e, v) => {
-	for (let i = 0; i < v.file.length; i++) {
-		files.unshift({ file: v.file[i], time: v.time });
-	}
-	if (files.length > maxLength) files.splice(maxLength);
-	subscription.emit("files", v);
+on("update-clipboard-file", (e, v) => {
+	subscription.emit("file", v);
 });
 
 var subscription = {
 	config: () => config,
-	setting: () => JSON.parse(JSON.stringify(setting)),
-	data: () => {
-		var res = [];
-		for (let i = 0; i < data.length; i++) {
-			res.push(data[i]);
-		}
-		return res;
-	},
-	files: () => {
-		var res = [];
-		for (let i = 0; i < files.length; i++) {
-			res.push(files[i]);
-		}
-		return res;
-	},
+	setting: () => store.get("setting") || {},
 
 	wait: () => {
-		return new Promise((r, j) =>
-			Promise.all([
-				send("init-clipboard").then((res) => initClipboard(res)),
-				send("init-clipboard-files").then((res) => initClipboardFiles(res)),
-			]).then(() => r())
-		);
+		return new Promise((r, j) => r());
 	},
 
 	emit: (event, data) => {
@@ -86,6 +51,11 @@ var subscription = {
 		}
 		var name = getCurrentInstance().vnode.component.type.__name;
 		onList[event][name] = (...args) => fn(...args);
+	},
+	remove: (event) => {
+		if (!onList[event]) return;
+		var name = getCurrentInstance().vnode.component.type.__name;
+		delete onList[event][name];
 	},
 };
 

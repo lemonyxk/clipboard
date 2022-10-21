@@ -1,10 +1,11 @@
-const { app, BrowserWindow, powerMonitor, screen, Menu, globalShortcut, nativeImage, Tray, clipboard, ipcMain, ipcRenderer } = require("electron");
+const { app, BrowserWindow, powerMonitor, screen, Menu, globalShortcut, nativeImage, Tray, clipboard, ipcMain } = require("electron");
 const path = require("path");
 const Store = require("electron-store");
 const fs = require("fs");
 const lib = require("./lib");
 
 let dev = !!process.env.NODE_ENV;
+var lock = path.join(__dirname, "lock");
 
 if (!dev) {
 	var log = path.join(__dirname, "log");
@@ -16,15 +17,14 @@ if (!dev) {
 }
 
 Store.initRenderer();
-
 var store = new Store();
 
-var lock = path.join(__dirname, "lock");
-
-var maxLength = 1000;
-
+var maxLength = 1500;
+var pageSize = 15;
 var data = store.get("data") || [];
 var files = store.get("files") || [];
+var dataFavorite = data.filter((e) => e.favorite);
+var filesFavorite = files.filter((e) => e.favorite);
 var text = data[0] || "";
 var file = files[0] ? [files[0]] : [];
 
@@ -37,6 +37,8 @@ class Main {
 	settingWindow = null;
 
 	tray = null;
+
+	inc = Date.now();
 
 	setting() {
 		if (!dev) {
@@ -53,6 +55,14 @@ class Main {
 			return process.kill(pid, 0);
 		} catch (e) {
 			return e.code === "EPERM";
+		}
+	}
+
+	unlock() {
+		try {
+			fs.rmSync(lock);
+		} catch (error) {
+			console.log(lock, "not exists");
 		}
 	}
 
@@ -84,11 +94,8 @@ class Main {
 				}
 			});
 
-			// // 检查快捷键是否注册成功
-			// console.log(globalShortcut.isRegistered("CommandOrControl+P"));
-
+			console.log(globalShortcut.isRegistered("CommandOrControl+P"));
 			console.log("main pid", process.pid);
-			if (this.server) console.log("child pid", this.server.pid);
 
 			this.setting();
 
@@ -98,25 +105,28 @@ class Main {
 
 			this.initTray();
 			this.ipcMain();
+
+			this.loop();
 		});
 
 		// Quit when all windows are closed.
-		// app.on("window-all-closed", () => {
-		// 	console.log("on window-all-closed");
-		// 	// On OS X it is common for applications and their menu bar
-		// 	// to stay active until the user quits explicitly with Cmd + Q
-		// 	// if (process.platform !== "darwin") {}
-		// 	this.quit();
-		// });
+		app.on("window-all-closed", () => {
+			console.log("on window-all-closed");
+			// On OS X it is common for applications and their menu bar
+			// to stay active until the user quits explicitly with Cmd + Q
+			if (process.platform !== "darwin") {
+				console.log("maybe is time to quit");
+			}
+		});
 
-		// app.on("activate", () => {
-		// 	console.log("on activate");
-		// 	// On OS X it's common to re-create a window in the app when the
-		// 	// dock icon is clicked and there are no other windows open.
-		// 	if (BrowserWindow.getAllWindows().length === 0) {
-		// 		this.createMainWindow();
-		// 	}
-		// });
+		app.on("activate", () => {
+			console.log("on activate");
+			// On OS X it's common to re-create a window in the app when the
+			// dock icon is clicked and there are no other windows open.
+			if (BrowserWindow.getAllWindows().length === 0) {
+				console.log("maybe is time to create a new one");
+			}
+		});
 	}
 
 	createSettingWindow() {
@@ -250,6 +260,10 @@ class Main {
 			},
 		});
 
+		mainWindow.on("hide", (e) => {
+			mainWindow.webContents.send("mainWindow-hide");
+		});
+
 		mainWindow.on("close", (e) => {
 			if (dev) return this.quit();
 			e.preventDefault();
@@ -308,20 +322,16 @@ class Main {
 		]);
 
 		contextMenu.on("menu-will-close", () => {
-			// console.log("menu will close");
 			tray.setContextMenu(null);
 			this.mainWindow.hide();
 		});
 
 		tray.on("right-click", () => {
-			// console.log("right click");
 			tray.setContextMenu(contextMenu);
 			tray.popUpContextMenu();
 		});
 
 		tray.on("click", (e, b, p) => {
-			// console.log("click");
-
 			tray.setContextMenu(null);
 			var x = b.x;
 			var y = b.y;
@@ -337,18 +347,6 @@ class Main {
 				this.mainWindow.setPosition(x - width / 2, y);
 			}
 
-			// if (size.width - x < width) {
-			// 	x = size.width - width;
-			// 	this.mainWindow.setPosition(x, y);
-			// } else {
-			// 	if (x - width / 2 < 0) {
-			// 		x = 0;
-			// 		this.mainWindow.setPosition(x, y);
-			// 	} else {
-			// 		this.mainWindow.setPosition(x - width / 2, y);
-			// 	}
-			// }
-
 			this.mainWindow.show();
 		});
 
@@ -357,11 +355,18 @@ class Main {
 
 			if (fList.length != 0 && !lib.compare(fList, file)) {
 				file = fList;
+				var res = [];
 				for (let i = 0; i < file.length; i++) {
-					files.unshift({ file: file[i], time: Date.now() });
+					var f = { text: file[i], time: Date.now(), id: this.inc++ };
+					files.unshift(f);
+					res.push(f);
 				}
 				if (files.length > maxLength) files.splice(maxLength);
-				this.mainWindow.webContents.send("update-clipboard-files", { file, time: Date.now() });
+				this.mainWindow.webContents.send("update-clipboard-file", {
+					text: res,
+					total: files.length,
+					size: pageSize,
+				});
 
 				// stop read text
 				text = clipboard.readText("clipboard");
@@ -371,9 +376,14 @@ class Main {
 			var nText = clipboard.readText("clipboard");
 			if (nText != "" && text != nText) {
 				text = nText;
-				data.unshift({ text, time: Date.now() });
+				var f = { text: text, time: Date.now(), id: this.inc++ };
+				data.unshift(f);
 				if (data.length > maxLength) data.splice(maxLength);
-				this.mainWindow.webContents.send("update-clipboard", { text, time: Date.now() });
+				this.mainWindow.webContents.send("update-clipboard-text", {
+					text: [f],
+					total: data.length,
+					size: pageSize,
+				});
 			}
 		}, 500);
 
@@ -391,6 +401,50 @@ class Main {
 			this.setting();
 		});
 
+		ipcMain.on("clear", () => {
+			clipboard.clear("clipboard");
+			var setting = store.get("setting");
+			store.clear();
+			data = [];
+			files = [];
+			text = "";
+			file = [];
+			store.set("setting", setting);
+			this.mainWindow.reload();
+		});
+
+		ipcMain.on("hide-window", () => {
+			this.mainWindow.hide();
+		});
+
+		ipcMain.on("clipboard-favorite", (e, info) => {
+			if (info.type == "text") {
+				var index = data.findIndex((e) => e.id == info.id);
+				if (index == -1) return;
+				data[index].favorite = !data[index].favorite;
+				if (!data[index].favorite) {
+					var index = dataFavorite.findIndex((e) => e.id == info.id);
+					if (index == -1) return;
+					dataFavorite.splice(index, 1);
+				} else {
+					dataFavorite.unshift(data[index]);
+				}
+			}
+
+			if (info.type == "file") {
+				var index = files.findIndex((e) => e.id == info.id);
+				if (index == -1) return;
+				files[index].favorite = !files[index].favorite;
+				if (!files[index].favorite) {
+					var index = filesFavorite.findIndex((e) => e.id == info.id);
+					if (index == -1) return;
+					filesFavorite.splice(index, 1);
+				} else {
+					filesFavorite.unshift(files[index]);
+				}
+			}
+		});
+
 		ipcMain.on("clipboard-text", (e, text) => {
 			clipboard.writeText(text, "clipboard");
 		});
@@ -399,25 +453,59 @@ class Main {
 			lib.writeFiles([file]);
 		});
 
-		ipcMain.on("hide-window", () => {
-			this.mainWindow.hide();
+		ipcMain.on("get-clipboard-text", (e, info) => {
+			var page = info.page;
+			var source = info.favorite ? dataFavorite : data;
+			var res = source.slice((page - 1) * pageSize, (page - 1) * pageSize + pageSize);
+			this.mainWindow.webContents.send("get-clipboard-text", { data: res, total: source.length, size: pageSize });
 		});
 
-		ipcMain.on("init-clipboard", () => {
-			this.mainWindow.webContents.send("init-clipboard", data);
+		ipcMain.on("get-clipboard-file", (e, info) => {
+			var page = info.page;
+			var source = info.favorite ? filesFavorite : files;
+			var res = source.slice((page - 1) * pageSize, (page - 1) * pageSize + pageSize);
+			this.mainWindow.webContents.send("get-clipboard-file", { data: res, total: source.length, size: pageSize });
 		});
 
-		ipcMain.on("init-clipboard-files", () => {
-			this.mainWindow.webContents.send("init-clipboard-files", files);
+		ipcMain.on("get-clipboard-text-search", (e, info) => {
+			var filter = info.filter;
+			var source = info.favorite ? dataFavorite : data;
+			var regex = new RegExp(filter);
+			var res = [];
+			for (let i = 0; i < source.length; i++) {
+				if (regex.test(source[i].text)) {
+					res.push(source[i]);
+				}
+			}
+			this.mainWindow.webContents.send("get-clipboard-text-search", { data: res, total: res.length, size: pageSize });
+		});
+
+		ipcMain.on("get-clipboard-file-search", (e, info) => {
+			var filter = info.filter;
+			var source = info.favorite ? filesFavorite : files;
+			var regex = new RegExp(filter);
+			var res = [];
+			for (let i = 0; i < source.length; i++) {
+				if (regex.test(source[i].text)) {
+					res.push(source[i]);
+				}
+			}
+			this.mainWindow.webContents.send("get-clipboard-file-search", { data: res, total: res.length, size: pageSize });
 		});
 	}
 
+	loop() {
+		var t = setInterval(() => {
+			store.set("data", data);
+			store.set("files", files);
+		}, 1000 * 60 * 30);
+	}
+
 	quit() {
+		this.unlock();
+
 		store.set("data", data);
 		store.set("files", files);
-		try {
-			fs.rmSync(lock);
-		} catch (error) {}
 		app.exit();
 	}
 

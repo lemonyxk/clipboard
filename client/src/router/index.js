@@ -2,32 +2,32 @@ import { createRouter, createWebHashHistory } from "vue-router";
 import Index from "../views/Index.vue";
 import Setting from "../views/Setting.vue";
 import About from "../views/About.vue";
-import Search from "../views/type/Search.vue";
-import Normal from "../views/type/Normal.vue";
-import Files from "../views/type/Files.vue";
-import FilesSearch from "../views/type/FilesSearch.vue";
+import Text from "../views/type/Text.vue";
+import TextSearch from "../views/type/TextSearch.vue";
+import File from "../views/type/File.vue";
+import FileSearch from "../views/type/FileSearch.vue";
 
 const routes = [
 	{
 		path: "/",
 		name: "index",
 		component: Index,
-		redirect: "/normal",
+		redirect: "/text",
 		children: [
-			{ path: "/normal", name: "normal", component: Normal },
-			{ path: "/search", name: "search", component: Search },
-			{ path: "/files", name: "files", component: Files },
-			{ path: "/filesSearch", name: "filesSearch", component: FilesSearch },
+			{ path: "/text", name: "Text", component: Text },
+			{ path: "/text-search", name: "TextSearch", component: TextSearch },
+			{ path: "/file", name: "file", component: File },
+			{ path: "/file-search", name: "FileSearch", component: FileSearch },
 		],
 	},
 	{
 		path: "/setting",
-		name: "setting",
+		name: "Setting",
 		component: Setting,
 	},
 	{
 		path: "/about",
-		name: "about",
+		name: "About",
 		// route level code-splitting
 		// this generates a separate chunk (about.[hash].js) for this route
 		// which is lazy-loaded when the route is visited.
