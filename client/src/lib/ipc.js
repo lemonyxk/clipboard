@@ -1,13 +1,5 @@
 const { ipcRenderer } = window.require("electron");
 
-// ipcRenderer.send("init-clipboard");
-// ipcRenderer.on("init-clipboard", (e, v) => {
-// 	data = v;
-// 	if (data.length > maxLength) data.splice(maxLength);
-// 	isLoad = true;
-// 	console.log(isLoad);
-// });
-
 var send = (event, args) => {
 	ipcRenderer.send(event, args);
 	return {

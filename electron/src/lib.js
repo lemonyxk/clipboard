@@ -1,5 +1,12 @@
-const { clipboard, dialog } = require("electron");
+const { clipboard, dialog, nativeImage } = require("electron");
 const fs = require("fs");
+const path = require("path");
+
+const icon = nativeImage.createFromPath(path.join(__dirname, "copyTemplate.png"));
+
+function showMessage(message) {
+	return dialog.showMessageBox(null, { message, type: "info", icon: icon });
+}
 
 function compare(arr1, arr2) {
 	if (arr1.length != arr2.length) {
@@ -51,13 +58,17 @@ function formatPList(arr) {
 	return str;
 }
 
+var clipboardEx = null;
+
 function readFiles() {
 	var fList = [];
 	if (process.platform == "darwin") {
 		var pList = clipboard.read("NSFilenamesPboardType");
 		fList = parsePList(pList);
 	} else {
-		const clipboardEx = require("electron-clipboard-ex");
+		if (clipboardEx == null) {
+			clipboardEx = require("electron-clipboard-ex");
+		}
 		fList = clipboardEx.readFilePaths();
 	}
 	return fList;
@@ -68,7 +79,7 @@ function writeFiles(arr) {
 
 	fs.stat(arr[0], (err) => {
 		if (err) {
-			dialog.showErrorBox("Clipboard", arr[0] + " not exists!");
+			showMessage("Clipboard", arr[0] + " not exists!");
 			return;
 		}
 
@@ -77,10 +88,20 @@ function writeFiles(arr) {
 			if (str == "") return;
 			clipboard.writeBuffer("NSFilenamesPboardType", Buffer.from(str));
 		} else {
-			const clipboardEx = require("electron-clipboard-ex");
-			clipboardEx.writeFilePaths([file]);
+			if (clipboardEx == null) {
+				clipboardEx = require("electron-clipboard-ex");
+			}
+			clipboardEx.writeFilePaths(arr);
 		}
 	});
 }
 
-module.exports = { compare, writeFiles, readFiles };
+function isWin32() {
+	return process.platform == "win32";
+}
+
+function isMac() {
+	return process.platform == "darwin";
+}
+
+module.exports = { compare, writeFiles, readFiles, showMessage, isWin32, isMac };

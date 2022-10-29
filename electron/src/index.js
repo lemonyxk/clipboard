@@ -1,4 +1,16 @@
-const { app, BrowserWindow, powerMonitor, screen, Menu, globalShortcut, nativeImage, Tray, clipboard, ipcMain } = require("electron");
+const {
+	app,
+	BrowserWindow,
+	powerMonitor,
+	screen,
+	Menu,
+	globalShortcut,
+	nativeImage,
+	Tray,
+	clipboard,
+	ipcMain,
+	dialog,
+} = require("electron");
 const path = require("path");
 const Store = require("electron-store");
 const fs = require("fs");
@@ -23,8 +35,8 @@ var maxLength = 1500;
 var pageSize = 15;
 var data = store.get("data") || [];
 var files = store.get("files") || [];
-var dataFavorite = data.filter((e) => e.favorite);
-var filesFavorite = files.filter((e) => e.favorite);
+var dataFavorite = store.get("dataFavorite") || [];
+var filesFavorite = store.get("filesFavorite") || [];
 var text = data[0] || "";
 var file = files[0] ? [files[0]] : [];
 
@@ -84,7 +96,9 @@ class Main {
 		// initialization and is ready to create browser windows.
 		// Some APIs can only be used after this event occurs.
 		app.on("ready", () => {
-			const ret = globalShortcut.register("CommandOrControl+P", () => {
+			var key = lib.isMac() ? "Command" : "Alt";
+
+			globalShortcut.register(`${key}+P`, () => {
 				var win = BrowserWindow.getFocusedWindow();
 				if (!win) return;
 				if (win.webContents.isDevToolsOpened()) {
@@ -92,6 +106,10 @@ class Main {
 				} else {
 					win.webContents.openDevTools();
 				}
+			});
+
+			globalShortcut.register(`${key}+B`, () => {
+				this.mainWindow.show();
 			});
 
 			console.log(globalShortcut.isRegistered("CommandOrControl+P"));
@@ -114,7 +132,7 @@ class Main {
 			console.log("on window-all-closed");
 			// On OS X it is common for applications and their menu bar
 			// to stay active until the user quits explicitly with Cmd + Q
-			if (process.platform !== "darwin") {
+			if (!lib.isMac()) {
 				console.log("maybe is time to quit");
 			}
 		});
@@ -155,6 +173,8 @@ class Main {
 				nodeIntegrationInWorker: true,
 			},
 		});
+
+		settingWindow.setVisibleOnAllWorkspaces(true);
 
 		settingWindow.on("close", (e) => {
 			e.preventDefault();
@@ -206,6 +226,8 @@ class Main {
 				nodeIntegrationInWorker: true,
 			},
 		});
+
+		aboutWindow.setVisibleOnAllWorkspaces(true);
 
 		aboutWindow.on("close", (e) => {
 			e.preventDefault();
@@ -260,6 +282,8 @@ class Main {
 			},
 		});
 
+		mainWindow.setVisibleOnAllWorkspaces(true);
+
 		mainWindow.on("hide", (e) => {
 			mainWindow.webContents.send("mainWindow-hide");
 		});
@@ -299,11 +323,36 @@ class Main {
 	initTray() {
 		if (this.tray) return;
 
-		let size = screen.getPrimaryDisplay().size;
-
 		const icon = nativeImage.createFromPath(path.join(__dirname, "copyTemplate.png"));
-		let tray = new Tray(icon);
+		const tray = new Tray(icon);
+
 		tray.setToolTip("Clipboard Manager");
+
+		new Promise((r, j) => {
+			var t = setInterval(() => {
+				var b = tray.getBounds();
+				if (b.x != 0) {
+					r(b);
+					clearInterval(t);
+				}
+			}, 100);
+		}).then((b) => {
+			const size = screen.getPrimaryDisplay().size;
+
+			var x = b.x;
+			var y = b.y;
+
+			if (lib.isWin32()) {
+				y = size.height - height - b.height;
+			}
+
+			if (x - width / 2 < 0) {
+				x = 0;
+				this.mainWindow.setPosition(x, y);
+			} else {
+				this.mainWindow.setPosition(x - width / 2, y);
+			}
+		});
 
 		const contextMenu = Menu.buildFromTemplate([
 			{
@@ -333,20 +382,6 @@ class Main {
 
 		tray.on("click", (e, b, p) => {
 			tray.setContextMenu(null);
-			var x = b.x;
-			var y = b.y;
-
-			if (process.platform == "win32") {
-				y = size.height - height - b.height;
-			}
-
-			if (x - width / 2 < 0) {
-				x = 0;
-				this.mainWindow.setPosition(x, y);
-			} else {
-				this.mainWindow.setPosition(x - width / 2, y);
-			}
-
 			this.mainWindow.show();
 		});
 
@@ -409,8 +444,11 @@ class Main {
 			files = [];
 			text = "";
 			file = [];
+			dataFavorite = [];
+			filesFavorite = [];
 			store.set("setting", setting);
 			this.mainWindow.reload();
+			lib.showMessage("clear success!!!");
 		});
 
 		ipcMain.on("hide-window", () => {
@@ -477,7 +515,11 @@ class Main {
 					res.push(source[i]);
 				}
 			}
-			this.mainWindow.webContents.send("get-clipboard-text-search", { data: res, total: res.length, size: pageSize });
+			this.mainWindow.webContents.send("get-clipboard-text-search", {
+				data: res,
+				total: res.length,
+				size: pageSize,
+			});
 		});
 
 		ipcMain.on("get-clipboard-file-search", (e, info) => {
@@ -490,7 +532,11 @@ class Main {
 					res.push(source[i]);
 				}
 			}
-			this.mainWindow.webContents.send("get-clipboard-file-search", { data: res, total: res.length, size: pageSize });
+			this.mainWindow.webContents.send("get-clipboard-file-search", {
+				data: res,
+				total: res.length,
+				size: pageSize,
+			});
 		});
 	}
 
@@ -498,6 +544,8 @@ class Main {
 		var t = setInterval(() => {
 			store.set("data", data);
 			store.set("files", files);
+			store.set("dataFavorite", dataFavorite);
+			store.set("filesFavorite", filesFavorite);
 		}, 1000 * 60 * 30);
 	}
 
@@ -515,7 +563,7 @@ class Main {
 			return;
 		}
 
-		if (process.platform === "darwin") {
+		if (lib.isMac()) {
 			const template = [
 				{
 					label: "Application",
@@ -545,7 +593,9 @@ class Main {
 				},
 			];
 			Menu.setApplicationMenu(Menu.buildFromTemplate(template));
-		} else {
+		}
+
+		if (lib.isWin32()) {
 			// tray flicker
 			app.commandLine.appendSwitch("wm-window-animations-disabled");
 			Menu.setApplicationMenu(null);

@@ -10,8 +10,13 @@ import text from "@/assets/text.svg";
 import texted from "@/assets/texted.svg";
 import heart from "@/assets/heart.svg";
 import hearted from "@/assets/hearted.svg";
+import { send } from "@/lib/ipc";
 
 var router = useRouter();
+
+router.beforeEach((to, from) => {
+	// console.log(to, from);
+});
 
 var show = ref(false);
 subscription.wait().then(() => (show.value = true));
@@ -42,7 +47,7 @@ function onKeyEnter(e) {
 	if (e.code == "NumpadEnter") return onSearch();
 }
 
-function onBlur(e) {
+function onBlur() {
 	if (searchText.value == "") return resetSearch();
 }
 
@@ -82,10 +87,22 @@ function onFavorite() {
 }
 
 subscription.on("onkeydown", (e) => {
+	if (e.code == "Escape") {
+		if (searchText.value == "" && !input.value.active) {
+			send("hide-window");
+		} else {
+			searchText.value = "";
+			onBlur();
+		}
+		return;
+	}
 	if (e.code == "Tab") return input.value.focus();
-	if (e.code == "Escape") return resetSearch();
 	if (e.code == "Enter") return onSearch();
 	if (e.code == "NumpadEnter") return onSearch();
+	if (e.code == "KeyQ") return onText();
+	if (e.code == "KeyW") return onDocument();
+	if (e.code == "KeyE") return onFavorite();
+	if (e.code == "KeyR") return onPin();
 });
 
 //
@@ -126,18 +143,15 @@ subscription.on("onkeydown", (e) => {
 				<div class="pin" v-if="isPin"><img :src="pined" @click="onPin" title="UnPin" /></div>
 				<div class="pin" v-else><img :src="pin" @click="onPin" title="Pined" /></div>
 			</div>
-
 			<div class="right">
 				<router-view v-slot="{ Component }" v-if="show">
 					<keep-alive>
-						<component :is="Component" />
+						<component :is="Component" :key="$route.fullPath" />
 					</keep-alive>
 				</router-view>
 			</div>
 		</div>
 	</div>
-
-	<!-- <v-snackbar :timeout="1500" v-model="open" location="top"> copy success </v-snackbar> -->
 </template>
 
 <style scoped lang="scss">

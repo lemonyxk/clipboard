@@ -49,12 +49,14 @@ var subscription = {
 		if (!onList[event]) {
 			onList[event] = {};
 		}
-		var name = getCurrentInstance().vnode.component.type.__name;
+		var name = getCurrentInstance()?.vnode.component.type.__name;
+		if (!name) return;
 		onList[event][name] = (...args) => fn(...args);
 	},
 	remove: (event) => {
 		if (!onList[event]) return;
-		var name = getCurrentInstance().vnode.component.type.__name;
+		var name = getCurrentInstance()?.vnode.component.type.__name;
+		if (!name) return;
 		delete onList[event][name];
 	},
 };

@@ -1,5 +1,5 @@
 <template>
-	<div class="middle">
+	<div class="middle" :class="className">
 		<div class="item" v-for="(item, i) in items.data" :key="i" @mouseenter="hoverId = item.id" @mouseleave="hoverId = 0">
 			<div v-if="clickToCopy" class="value" @click="onSelect(item)">{{ item.text }}</div>
 			<div v-else class="value" @dblclick="onSelect(item)">{{ item.text }}</div>
@@ -89,71 +89,12 @@ function onHeart(item) {
 function getLen() {
 	return parseInt((items.value.total + items.value.size - 1) / items.value.size) || 1;
 }
+
+var className = ref("opacityAnimation");
+
 //
 </script>
 
 <style scoped lang="scss">
-.middle {
-	width: 100%;
-	height: calc(100% - 48px);
-
-	.item {
-		width: 100%;
-		height: calc(100% / 15);
-		justify-content: flex-start;
-		display: flex;
-		align-items: center;
-		padding: 5px 10px 5px 10px;
-		cursor: pointer;
-		&:hover {
-			background-color: burlywood;
-		}
-
-		.title {
-			width: 150px;
-			height: 100%;
-			color: #666;
-			justify-content: flex-end;
-			display: flex;
-			align-items: center;
-
-			.time {
-				width: 120px;
-				height: 100%;
-				justify-content: flex-end;
-				display: flex;
-				align-items: center;
-			}
-
-			.favorite {
-				width: 30px;
-				height: 100%;
-				justify-content: flex-end;
-				display: flex;
-				align-items: center;
-				img {
-					width: 16px;
-					height: 16px;
-				}
-			}
-		}
-
-		.value {
-			width: calc(100% - 150px);
-			height: 100%;
-			text-overflow: ellipsis;
-			white-space: nowrap;
-			overflow: hidden;
-			font-weight: 600;
-		}
-	}
-}
-
-.bottom {
-	width: 100%;
-	height: 48px;
-	display: flex;
-	justify-content: flex-start;
-	align-items: flex-end;
-}
+@import "./common.scss";
 </style>
