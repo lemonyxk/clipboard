@@ -11,6 +11,13 @@ import texted from "@/assets/texted.svg";
 import heart from "@/assets/heart.svg";
 import hearted from "@/assets/hearted.svg";
 import { send } from "@/lib/ipc";
+import { loadTheme } from "@/theme/theme";
+
+subscription.startKeyDown();
+
+subscription.on("setting", () => {
+	loadTheme();
+});
 
 var router = useRouter();
 
@@ -18,9 +25,7 @@ router.beforeEach((to, from) => {
 	// console.log(to, from);
 });
 
-var show = ref(false);
-subscription.wait().then(() => (show.value = true));
-
+var show = ref(true);
 var input = ref();
 var searchText = ref("");
 
@@ -171,7 +176,7 @@ subscription.on("onkeydown", (e) => {
 		align-items: flex-start;
 
 		.v-input {
-			::v-deep .v-input__control .v-field {
+			:deep(.v-input__control .v-field) {
 				background-color: rgb(60, 105, 202);
 				color: white;
 				border-radius: 0;
@@ -194,32 +199,25 @@ subscription.on("onkeydown", (e) => {
 		}
 
 		.left {
-			// width: 24px;
-			// height: 100%;
-			// display: flex;
-			// justify-content: flex-start;
-			// align-items: center;
-			// flex-direction: column;
-
-			width: 200px;
+			width: 50%;
 			height: 38px;
 			display: flex;
-			justify-content: center;
+			justify-content: flex-end;
 			align-items: center;
-			// flex-direction: column;
 
 			position: absolute;
 			bottom: 0;
 			right: 0;
+			-webkit-app-region: drag;
 
 			div {
-				width: 18px;
-				height: 18px;
+				width: 42px;
+				height: 38px;
 				display: flex;
 				justify-content: center;
 				align-items: center;
-				margin: 0 10px;
-
+				padding: 0 10px;
+				-webkit-app-region: no-drag;
 				img {
 					width: 18px;
 					height: 18px;

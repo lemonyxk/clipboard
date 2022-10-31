@@ -32,4 +32,28 @@ body {
 	align-items: center;
 	flex-direction: column;
 }
+
+::-webkit-scrollbar {
+	width: 5px;
+	height: 5px;
+}
+
+::-webkit-scrollbar-track {
+	/* border-radius: 3px; */
+	/* background: rgba(115, 18, 226, 0.16); */
+	// box-shadow: inset 0 0 5px rgba(0, 0, 0, 0.08);
+	// box-shadow: inset 0 0 5px rgba(0, 0, 0, 0.08);
+}
+
+::-webkit-scrollbar-thumb {
+	/* border-radius: 3px; */
+	background: rgba(20, 5, 107, 0.06);
+	// background: black;
+	box-shadow: inset 0 0 5px rgba(0, 0, 0, 0.08);
+}
+
+.none-scrollbar::-webkit-scrollbar {
+	width: 0px;
+	height: 0px;
+}
 </style>

@@ -4,11 +4,12 @@ import { getCurrentInstance } from "vue";
 
 var onList = {};
 var config = { pin: false, favorite: false };
+var setting = store.get("setting") || {};
 
-window.onkeydown = (e) => {
-	e.preventDefault();
-	subscription.emit("onkeydown", e);
-};
+on("setting", (e, v) => {
+	setting = v;
+	subscription.emit("setting", v);
+});
 
 on("mainWindow-hide", (e, v) => {
 	subscription.emit("mainWindow-hide");
@@ -31,12 +32,20 @@ on("update-clipboard-file", (e, v) => {
 	subscription.emit("file", v);
 });
 
+var keyDown = (e) => {
+	e.preventDefault();
+	subscription.emit("onkeydown", e);
+};
+
 var subscription = {
 	config: () => config,
-	setting: () => store.get("setting") || {},
+	setting: () => setting,
 
-	wait: () => {
-		return new Promise((r, j) => r());
+	startKeyDown: () => {
+		window.addEventListener("keydown", keyDown);
+	},
+	stopKeyDown: () => {
+		window.removeEventListener("keydown", keyDown);
 	},
 
 	emit: (event, data) => {

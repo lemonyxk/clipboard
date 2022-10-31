@@ -1,21 +1,28 @@
 .middle {
 	width: 100%;
 	height: calc(100% - 48px);
+	overflow: auto;
+	position: relative;
+
+	.hover {
+		background-color: burlywood;
+	}
+
+	.deleted {
+		color: rgb(241, 85, 85);
+	}
 
 	.item {
 		width: 100%;
-		height: calc(100% / 15);
+		height: calc(100% / var(--item-length));
 		justify-content: flex-start;
 		display: flex;
 		align-items: center;
 		padding: 5px 10px 5px 10px;
 		cursor: pointer;
-		&:hover {
-			background-color: burlywood;
-		}
 
 		.title {
-			width: calc(var(--item-len) + 30px);
+			width: calc(var(--item-width) + 30px);
 			height: 100%;
 			color: #666;
 			justify-content: flex-end;
@@ -23,7 +30,7 @@
 			align-items: center;
 
 			.time {
-				width: var(--item-len);
+				width: var(--item-width);
 				height: 100%;
 				justify-content: flex-end;
 				display: flex;
@@ -44,12 +51,15 @@
 		}
 
 		.value {
-			width: calc(100% - var(--item-len) - 30px);
+			width: calc(100% - var(--item-width) - 30px);
 			height: 100%;
 			text-overflow: ellipsis;
 			white-space: nowrap;
 			overflow: hidden;
 			font-weight: 600;
+			display: flex;
+			justify-content: flex-start;
+			align-items: center;
 		}
 	}
 }
@@ -60,6 +70,15 @@
 	display: flex;
 	justify-content: flex-start;
 	align-items: flex-end;
+
+	// cursor: move;
+	.left {
+		height: 48px;
+		width: 50%;
+		display: flex;
+		justify-content: flex-start;
+		align-items: flex-end;
+	}
 }
 
 @keyframes opacityAnimation {
@@ -73,4 +92,12 @@
 
 .opacityAnimation {
 	animation: opacityAnimation 0.5s;
+}
+
+.preview {
+	width: 100%;
+	height: 200px;
+	// background-color: rgba($color: #efefef, $alpha: 1);
+	position: absolute;
+	top: 0;
 }

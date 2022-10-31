@@ -1,11 +1,22 @@
 <template>
-	<div class="middle" :class="className">
-		<div class="item" v-for="(item, i) in items.data" :key="i" @mouseenter="hoverId = item.id" @mouseleave="hoverId = 0">
-			<div v-if="clickToCopy" class="value" @click="onSelect(item)">{{ item.text }}</div>
+	<div class="middle" :class="className" ref="middle">
+		<div
+			class="item"
+			v-for="(item, i) in items.data"
+			ref="itemRef"
+			:key="i"
+			:class="hoverClass(item)"
+			@mouseenter="mouseenter(item, i)"
+			@mouseleave="mouseleave(item, i)"
+		>
+			<div v-if="setting.clickToCopy" class="value" @click="onSelect(item)">{{ item.text }}</div>
 			<div v-else class="value" @dblclick="onSelect(item)">{{ item.text }}</div>
 
 			<div class="title">
-				<div class="favorite">
+				<div class="favorite" v-if="item.deleted">
+					<img :src="deleted" @click="onDelete(item)" />
+				</div>
+				<div class="favorite" v-else>
 					<img :src="hearted" :hidden="!item.favorite" v-if="item.favorite" @click="onHeart(item)" />
 					<img :src="heart" :hidden="hoverId != item.id" v-else @click="onHeart(item)" />
 				</div>
@@ -14,7 +25,19 @@
 		</div>
 	</div>
 	<div class="bottom">
-		<v-pagination v-model="page" :length="getLen()" :total-visible="6" density="compact" v-on:update:model-value="onPageChange"></v-pagination>
+		<div class="left">
+			<v-pagination
+				v-model="page"
+				:length="getLen()"
+				:total-visible="6"
+				density="compact"
+				v-on:update:model-value="onPageChange"
+			></v-pagination>
+		</div>
+	</div>
+
+	<div class="preview" v-show="previewShow" :style="{ top: previewTop }" @mouseenter="previewMouseEnter" @mouseleave="previewMouseLeave">
+		<Preview :data="previewItem"></Preview>
 	</div>
 </template>
 
@@ -25,16 +48,67 @@ import { send } from "../../lib/ipc";
 import { format } from "../../lib/utils";
 import heart from "@/assets/heart.svg";
 import hearted from "@/assets/hearted.svg";
+import deleted from "@/assets/deleted.svg";
+import Preview from "../../components/Preview.vue";
 
-var clickToCopy = ref(subscription.setting().clickToCopy);
-subscription.on("mainWindow-focus", () => {
-	clickToCopy.value = subscription.setting().clickToCopy;
+var setting = ref(subscription.setting());
+subscription.on("setting", (setting) => {
+	setting.value = setting;
 });
 
+var middle = ref();
+var itemRef = ref();
 var page = ref(1);
 var items = ref({});
 var hoverId = ref();
+var hoverIndex = -1;
 
+var previewShow = ref(false);
+var previewItem = ref({});
+var previewTop = ref(0);
+var mouseenterHandler = null;
+
+function preview(itemRef) {
+	if (hoverIndex < 0) return;
+
+	subscription.stopKeyDown();
+
+	send("load-image", { ...items.value.data[hoverIndex] }).then((data) => {
+		if (!data) items.value.data[hoverIndex].deleted = true;
+		previewItem.value = { item: items.value.data[hoverIndex], blob: data };
+	});
+
+	var react = itemRef.getBoundingClientRect();
+	var top = react.bottom - 42;
+	let to = 42 + middle.value.clientHeight - react.bottom;
+	if (to < 200 + 12) {
+		top = react.bottom - 200 - react.height - 42;
+	}
+	previewTop.value = top + "px";
+
+	previewShow.value = true;
+}
+
+function mouseenter(item, i) {
+	hoverId.value = item.id;
+	hoverIndex = i;
+}
+
+function mouseleave(item) {
+	mouseenterHandler = setTimeout(() => {
+		previewShow.value = false;
+		subscription.startKeyDown();
+	}, 200);
+}
+
+function previewMouseEnter() {
+	clearTimeout(mouseenterHandler);
+}
+
+function previewMouseLeave() {
+	previewShow.value = false;
+	subscription.startKeyDown();
+}
 var data = {};
 
 onActivated(() => {
@@ -42,39 +116,82 @@ onActivated(() => {
 		if (e.code == "KeyA" || e.code == "ArrowLeft") {
 			if (page.value == 1) return;
 			page.value--;
-			onPageChange();
+			update();
 		}
 		if (e.code == "KeyD" || e.code == "ArrowRight") {
 			if (page.value == getLen()) return;
 			page.value++;
-			onPageChange();
+			update();
+		}
+		if (e.code == "ArrowUp") {
+			if (hoverIndex < 1) hoverIndex = 1;
+			hoverIndex--;
+			hoverId.value = items.value.data[hoverIndex]?.id;
+
+			let react = itemRef.value[hoverIndex].getBoundingClientRect();
+			let to = react.top - 42;
+			if (to < 0) {
+				middle.value.scrollBy({ top: -react.height * 5, behavior: "smooth" });
+			}
+		}
+		if (e.code == "ArrowDown") {
+			if (hoverIndex > items.value.data.length - 2) hoverIndex = items.value.data.length - 2;
+			hoverIndex++;
+			hoverId.value = items.value.data[hoverIndex]?.id;
+
+			let react = itemRef.value[hoverIndex].getBoundingClientRect();
+			let to = react.bottom - 42 - middle.value.clientHeight;
+			if (to > 0) {
+				middle.value.scrollBy({ top: react.height * 5, behavior: "smooth" });
+			}
+		}
+		if (e.code == "Space") {
+			preview(itemRef.value[hoverIndex]);
 		}
 	});
 });
+
 onDeactivated(() => {
 	subscription.remove("onkeydown");
 });
+
+function onDelete(item) {
+	items.value.total--;
+	var index = data.data.findIndex((e) => e.id == item.id);
+	if (index != -1) data.data.splice(index, 1);
+	send("delete-file", { ...item }).then(() => update());
+}
+
+function hoverClass(item) {
+	var className = [];
+	if (hoverId.value == item.id) {
+		className.push("hover");
+	}
+	if (item.deleted) {
+		className.push("deleted");
+	}
+	return className.join(" ");
+}
 
 subscription.on("file-search", (info) => {
 	send("get-clipboard-file-search", { filter: info.text, favorite: info.favorite }).then((v) => {
 		page.value = 1;
 		data = v;
-		var res = {
-			data: v.data.slice((page.value - 1) * v.size, (page.value - 1) * v.size + v.size),
-			total: v.total,
-			size: v.size,
-		};
-		res.data = format(res.data);
-		items.value = res;
+		items.value = { total: v.total, size: v.size };
+		update();
 	});
 });
 
-function onPageChange() {
+function update() {
 	var res = items.value;
 	res.data = data.data.slice((page.value - 1) * res.size, (page.value - 1) * res.size + res.size);
 	res.data = format(res.data);
 	items.value = res;
+	hoverIndex = -1;
+	hoverId.value = items.value.data[hoverIndex]?.id;
 }
+
+var onPageChange = () => update();
 
 function onSelect(item) {
 	send("clipboard-file", item.text);

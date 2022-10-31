@@ -1,65 +1,75 @@
-const {
-	app,
-	BrowserWindow,
-	powerMonitor,
-	screen,
-	Menu,
-	globalShortcut,
-	nativeImage,
-	Tray,
-	clipboard,
-	ipcMain,
-	dialog,
-} = require("electron");
-const path = require("path");
+const { app, BrowserWindow, powerMonitor } = require("electron");
+const { globalShortcut, clipboard } = require("electron");
 const Store = require("electron-store");
+Store.initRenderer();
+const path = require("path");
 const fs = require("fs");
 const lib = require("./lib");
-
-let dev = !!process.env.NODE_ENV;
-var lock = path.join(__dirname, "lock");
-
-if (!dev) {
-	var log = path.join(__dirname, "log");
-	var fd = fs.openSync(log, "a+");
-	var consoleFn = console.log;
-	console.log = (...args) => {
-		fs.writeSync(fd, args.toString() + "\n");
-	};
-}
-
-Store.initRenderer();
-var store = new Store();
-
-var maxLength = 1500;
-var pageSize = 15;
-var data = store.get("data") || [];
-var files = store.get("files") || [];
-var dataFavorite = store.get("dataFavorite") || [];
-var filesFavorite = store.get("filesFavorite") || [];
-var text = data[0] || "";
-var file = files[0] ? [files[0]] : [];
-
-let width = dev ? 1200 : 700;
-let height = dev ? 600 : 600;
+const { createMainWindow, createSettingWindow, createAboutWindow } = require("./window");
+const { createTray } = require("./tray");
+const { ipc } = require("./ipcMain");
+const { createMenu } = require("./menu");
 
 class Main {
+	// window handler
 	mainWindow = null;
 	aboutWindow = null;
 	settingWindow = null;
 
+	// tray handler
 	tray = null;
 
+	// id inc
 	inc = Date.now();
 
-	setting() {
-		if (!dev) {
-			var setting = store.get("setting") || {};
-			app.setLoginItemSettings({
-				openAtLogin: setting.startAtLogin,
-				openAsHidden: true,
-			});
+	// lock file
+	lock = path.join(__dirname, "lock");
+
+	// mode
+	dev = !!process.env.NODE_ENV;
+
+	// main window width and height
+	width = this.dev ? 700 + 500 : 700;
+	height = this.dev ? 600 : 600;
+
+	// store
+	store = new Store();
+
+	// data
+	texts = this.store.get("texts") || [];
+	files = this.store.get("files") || [];
+	textsFavorite = this.store.get("textsFavorite") || [];
+	filesFavorite = this.store.get("filesFavorite") || [];
+	text = this.texts[0] ? this.texts[0].text : "";
+	file = this.files[0] ? [this.files[0].text] : [];
+
+	// app config
+	config = { maxLength: 1500, pageSize: 15, ...(this.store.get("setting") || {}) };
+
+	init() {
+		if (!this.dev) {
+			var log = path.join(__dirname, "log");
+			var fd = fs.openSync(log, "a+");
+			console.log = (...args) => {
+				fs.writeSync(fd, args.toString() + "\n");
+			};
 		}
+	}
+
+	setting(setting = {}) {
+		this.config = { ...this.config, ...setting };
+
+		// start at login
+		if (!this.dev) {
+			app.setLoginItemSettings({ openAtLogin: this.config.startAtLogin, openAsHidden: true });
+		}
+
+		if (!this.config.pageSize || this.config.pageSize < 1) this.config.pageSize = 15;
+		if (this.config.pageSize > 100) this.config.pageSize = 100;
+		if (!this.config.maxLength || this.config.maxLength < 1) this.config.maxLength = 1500;
+		if (this.config.maxLength > 10000) this.config.maxLength = 10000;
+
+		this.store.set("setting", this.config);
 	}
 
 	find(pid) {
@@ -72,21 +82,21 @@ class Main {
 
 	unlock() {
 		try {
-			fs.rmSync(lock);
+			fs.rmSync(this.lock);
 		} catch (error) {
-			console.log(lock, "not exists");
+			console.log(this.lock, "not exists");
 		}
 	}
 
 	checkSingle() {
-		if (fs.existsSync(lock)) {
-			var pid = fs.readFileSync(lock).toString();
+		if (fs.existsSync(this.lock)) {
+			var pid = fs.readFileSync(this.lock).toString();
 			if (this.find(parseInt(pid))) {
 				return false;
 			}
 		}
 
-		fs.writeFileSync(lock, `${process.pid}`);
+		fs.writeFileSync(this.lock, `${process.pid}`);
 
 		return true;
 	}
@@ -148,460 +158,98 @@ class Main {
 	}
 
 	createSettingWindow() {
-		var settingWindow = new BrowserWindow({
-			width: 300,
-			height: 300,
-			minWidth: 300,
-			minHeight: 300,
-			icon: path.join(__dirname, "clipboard.icns"),
-
-			resizable: true,
-
-			show: false,
-			// transparent: true,
-			// titleBarStyle: "hidden",
-			// titleBarOverlay: true,
-			// frame: false,
-			alwaysOnTop: true,
-			skipTaskbar: true,
-
-			webPreferences: {
-				nodeIntegration: true,
-				enableRemoteModule: true,
-				contextIsolation: false,
-
-				nodeIntegrationInWorker: true,
-			},
-		});
-
-		settingWindow.setVisibleOnAllWorkspaces(true);
-
-		settingWindow.on("close", (e) => {
-			e.preventDefault();
-			settingWindow.hide();
-			settingWindow.webContents.send("settingWindow-close");
-		});
-
-		settingWindow.on("blur", (e) => {
-			settingWindow.webContents.send("settingWindow-blur");
-		});
-
-		settingWindow.on("focus", (e) => {
-			settingWindow.webContents.send("settingWindow-focus");
-		});
-
-		// and load the index.html of the app.
-		if (dev) {
-			settingWindow.loadURL("http://127.0.0.1:8081/#/setting");
-		} else {
-			settingWindow.loadFile(path.join(__dirname, "/dist/index.html"), { hash: "/setting" });
-		}
-
-		this.settingWindow = settingWindow;
+		this.settingWindow = createSettingWindow.call(this);
 	}
 
 	createAboutWindow() {
-		var aboutWindow = new BrowserWindow({
-			width: 300,
-			height: 300,
-			minWidth: 300,
-			minHeight: 300,
-			icon: path.join(__dirname, "clipboard.icns"),
-
-			resizable: false,
-
-			show: false,
-			// transparent: true,
-			// titleBarStyle: "hidden",
-			// titleBarOverlay: true,
-			// frame: false,
-			alwaysOnTop: true,
-			skipTaskbar: true,
-
-			webPreferences: {
-				nodeIntegration: true,
-				enableRemoteModule: true,
-				contextIsolation: false,
-
-				nodeIntegrationInWorker: true,
-			},
-		});
-
-		aboutWindow.setVisibleOnAllWorkspaces(true);
-
-		aboutWindow.on("close", (e) => {
-			e.preventDefault();
-			aboutWindow.hide();
-			aboutWindow.webContents.send("aboutWindow-close");
-		});
-
-		aboutWindow.on("blur", (e) => {
-			aboutWindow.webContents.send("aboutWindow-blur");
-		});
-
-		aboutWindow.on("focus", (e) => {
-			aboutWindow.webContents.send("aboutWindow-focus");
-		});
-
-		// and load the index.html of the app.
-		if (dev) {
-			aboutWindow.loadURL("http://127.0.0.1:8081/#/about");
-		} else {
-			aboutWindow.loadFile(path.join(__dirname, "/dist/index.html"), { hash: "/about" });
-		}
-
-		this.aboutWindow = aboutWindow;
+		this.aboutWindow = createAboutWindow.call(this);
 	}
 
 	createMainWindow() {
-		// Create the browser window.
-
-		var mainWindow = new BrowserWindow({
-			width: width,
-			height: height,
-			minWidth: width,
-			minHeight: height,
-			icon: path.join(__dirname, "clipboard.icns"),
-
-			resizable: false,
-
-			show: false,
-			transparent: true,
-			// titleBarStyle: "hidden",
-			// titleBarOverlay: true,
-			frame: false,
-			alwaysOnTop: true,
-			skipTaskbar: true,
-
-			webPreferences: {
-				nodeIntegration: true,
-				enableRemoteModule: true,
-				contextIsolation: false,
-
-				nodeIntegrationInWorker: true,
-			},
-		});
-
-		mainWindow.setVisibleOnAllWorkspaces(true);
-
-		mainWindow.on("hide", (e) => {
-			mainWindow.webContents.send("mainWindow-hide");
-		});
-
-		mainWindow.on("close", (e) => {
-			if (dev) return this.quit();
-			e.preventDefault();
-			mainWindow.hide();
-			mainWindow.webContents.send("mainWindow-close");
-		});
-
-		mainWindow.on("blur", (e) => {
-			mainWindow.webContents.send("mainWindow-blur");
-		});
-
-		mainWindow.on("focus", (e) => {
-			mainWindow.webContents.send("mainWindow-focus");
-		});
-
-		mainWindow.webContents.on("dom-ready", () => {
-			console.log("dom-ready");
-		});
-
-		// and load the index.html of the app.
-		if (dev) {
-			mainWindow.loadURL("http://127.0.0.1:8081");
-		} else {
-			mainWindow.loadFile(path.join(__dirname, "/dist/index.html"));
-		}
-
-		// Open the DevTools.
-		if (dev) mainWindow.webContents.openDevTools();
-
-		this.mainWindow = mainWindow;
+		this.mainWindow = createMainWindow.call(this);
 	}
 
 	initTray() {
 		if (this.tray) return;
+		this.tray = createTray.call(this);
+	}
 
-		const icon = nativeImage.createFromPath(path.join(__dirname, "copyTemplate.png"));
-		const tray = new Tray(icon);
+	ipcMain() {
+		ipc.call(this);
+	}
 
-		tray.setToolTip("Clipboard Manager");
-
-		new Promise((r, j) => {
-			var t = setInterval(() => {
-				var b = tray.getBounds();
-				if (b.x != 0) {
-					r(b);
-					clearInterval(t);
-				}
-			}, 100);
-		}).then((b) => {
-			const size = screen.getPrimaryDisplay().size;
-
-			var x = b.x;
-			var y = b.y;
-
-			if (lib.isWin32()) {
-				y = size.height - height - b.height;
-			}
-
-			if (x - width / 2 < 0) {
-				x = 0;
-				this.mainWindow.setPosition(x, y);
-			} else {
-				this.mainWindow.setPosition(x - width / 2, y);
-			}
-		});
-
-		const contextMenu = Menu.buildFromTemplate([
-			{
-				label: "Clipboard Preferences",
-				type: "normal",
-				click: () => this.settingWindow.show(),
-			},
-			{ type: "separator" },
-			{
-				label: "About Clipboard",
-				type: "normal",
-				click: () => this.aboutWindow.show(),
-			},
-			{ type: "separator" },
-			{ label: "Quit Clipboard", type: "normal", click: () => this.quit() },
-		]);
-
-		contextMenu.on("menu-will-close", () => {
-			tray.setContextMenu(null);
-			this.mainWindow.hide();
-		});
-
-		tray.on("right-click", () => {
-			tray.setContextMenu(contextMenu);
-			tray.popUpContextMenu();
-		});
-
-		tray.on("click", (e, b, p) => {
-			tray.setContextMenu(null);
-			this.mainWindow.show();
-		});
+	loop() {
+		setInterval(() => {
+			this.store.set("texts", this.texts);
+			this.store.set("files", this.files);
+			this.store.set("textsFavorite", this.textsFavorite);
+			this.store.set("filesFavorite", this.filesFavorite);
+		}, 1000 * 60 * 30);
 
 		setInterval(() => {
 			var fList = lib.readFiles();
 
-			if (fList.length != 0 && !lib.compare(fList, file)) {
-				file = fList;
+			if (fList.length != 0 && !lib.compare(fList, this.file)) {
+				this.file = fList;
 				var res = [];
-				for (let i = 0; i < file.length; i++) {
-					var f = { text: file[i], time: Date.now(), id: this.inc++ };
-					files.unshift(f);
+				for (let i = 0; i < this.file.length; i++) {
+					var f = { text: this.file[i], time: Date.now(), id: this.inc++ };
+					this.files.unshift(f);
 					res.push(f);
 				}
-				if (files.length > maxLength) files.splice(maxLength);
+				if (this.files.length > this.config.maxLength) this.files.splice(this.config.maxLength);
 				this.mainWindow.webContents.send("update-clipboard-file", {
 					text: res,
-					total: files.length,
-					size: pageSize,
+					total: this.files.length,
+					size: this.config.pageSize,
 				});
 
 				// stop read text
-				text = clipboard.readText("clipboard");
+				this.text = clipboard.readText("clipboard");
 				return;
 			}
 
 			var nText = clipboard.readText("clipboard");
-			if (nText != "" && text != nText) {
-				text = nText;
-				var f = { text: text, time: Date.now(), id: this.inc++ };
-				data.unshift(f);
-				if (data.length > maxLength) data.splice(maxLength);
+			if (nText != "" && this.text != nText) {
+				this.text = nText;
+				var f = { text: this.text, time: Date.now(), id: this.inc++ };
+				this.texts.unshift(f);
+				if (this.texts.length > this.config.maxLength) this.texts.splice(this.config.maxLength);
 				this.mainWindow.webContents.send("update-clipboard-text", {
 					text: [f],
-					total: data.length,
-					size: pageSize,
+					total: this.texts.length,
+					size: this.config.pageSize,
 				});
 			}
 		}, 500);
-
-		this.tray = tray;
 	}
 
-	ipcMain() {
-		powerMonitor.on("lock-screen", () => {
-			console.log("lock-screen");
-			store.set("data", data);
-		});
-
-		ipcMain.on("setting", (e, data) => {
-			store.set("setting", data);
-			this.setting();
-		});
-
-		ipcMain.on("clear", () => {
-			clipboard.clear("clipboard");
-			var setting = store.get("setting");
-			store.clear();
-			data = [];
-			files = [];
-			text = "";
-			file = [];
-			dataFavorite = [];
-			filesFavorite = [];
-			store.set("setting", setting);
-			this.mainWindow.reload();
-			lib.showMessage("clear success!!!");
-		});
-
-		ipcMain.on("hide-window", () => {
-			this.mainWindow.hide();
-		});
-
-		ipcMain.on("clipboard-favorite", (e, info) => {
-			if (info.type == "text") {
-				var index = data.findIndex((e) => e.id == info.id);
-				if (index == -1) return;
-				data[index].favorite = !data[index].favorite;
-				if (!data[index].favorite) {
-					var index = dataFavorite.findIndex((e) => e.id == info.id);
-					if (index == -1) return;
-					dataFavorite.splice(index, 1);
-				} else {
-					dataFavorite.unshift(data[index]);
-				}
-			}
-
-			if (info.type == "file") {
-				var index = files.findIndex((e) => e.id == info.id);
-				if (index == -1) return;
-				files[index].favorite = !files[index].favorite;
-				if (!files[index].favorite) {
-					var index = filesFavorite.findIndex((e) => e.id == info.id);
-					if (index == -1) return;
-					filesFavorite.splice(index, 1);
-				} else {
-					filesFavorite.unshift(files[index]);
-				}
-			}
-		});
-
-		ipcMain.on("clipboard-text", (e, text) => {
-			clipboard.writeText(text, "clipboard");
-		});
-
-		ipcMain.on("clipboard-file", (e, file) => {
-			lib.writeFiles([file]);
-		});
-
-		ipcMain.on("get-clipboard-text", (e, info) => {
-			var page = info.page;
-			var source = info.favorite ? dataFavorite : data;
-			var res = source.slice((page - 1) * pageSize, (page - 1) * pageSize + pageSize);
-			this.mainWindow.webContents.send("get-clipboard-text", { data: res, total: source.length, size: pageSize });
-		});
-
-		ipcMain.on("get-clipboard-file", (e, info) => {
-			var page = info.page;
-			var source = info.favorite ? filesFavorite : files;
-			var res = source.slice((page - 1) * pageSize, (page - 1) * pageSize + pageSize);
-			this.mainWindow.webContents.send("get-clipboard-file", { data: res, total: source.length, size: pageSize });
-		});
-
-		ipcMain.on("get-clipboard-text-search", (e, info) => {
-			var filter = info.filter;
-			var source = info.favorite ? dataFavorite : data;
-			var regex = new RegExp(filter);
-			var res = [];
-			for (let i = 0; i < source.length; i++) {
-				if (regex.test(source[i].text)) {
-					res.push(source[i]);
-				}
-			}
-			this.mainWindow.webContents.send("get-clipboard-text-search", {
-				data: res,
-				total: res.length,
-				size: pageSize,
-			});
-		});
-
-		ipcMain.on("get-clipboard-file-search", (e, info) => {
-			var filter = info.filter;
-			var source = info.favorite ? filesFavorite : files;
-			var regex = new RegExp(filter);
-			var res = [];
-			for (let i = 0; i < source.length; i++) {
-				if (regex.test(source[i].text)) {
-					res.push(source[i]);
-				}
-			}
-			this.mainWindow.webContents.send("get-clipboard-file-search", {
-				data: res,
-				total: res.length,
-				size: pageSize,
-			});
-		});
-	}
-
-	loop() {
-		var t = setInterval(() => {
-			store.set("data", data);
-			store.set("files", files);
-			store.set("dataFavorite", dataFavorite);
-			store.set("filesFavorite", filesFavorite);
-		}, 1000 * 60 * 30);
+	save() {
+		this.store.set("texts", this.texts);
+		this.store.set("files", this.files);
+		this.store.set("textsFavorite", this.textsFavorite);
+		this.store.set("filesFavorite", this.filesFavorite);
 	}
 
 	quit() {
+		this.save();
 		this.unlock();
-
-		store.set("data", data);
-		store.set("files", files);
 		app.exit();
 	}
 
 	start() {
-		if (!this.checkSingle()) {
-			this.quit();
-			return;
-		}
+		this.init();
 
-		if (lib.isMac()) {
-			const template = [
-				{
-					label: "Application",
-					submenu: [
-						{
-							label: "Quit",
-							accelerator: "Command+Q",
-							click: () => this.quit(),
-						},
-					],
-				},
-				{
-					label: "Edit",
-					submenu: [
-						{ label: "Undo", accelerator: "CmdOrCtrl+Z", selector: "undo:" },
-						{ label: "Redo", accelerator: "Shift+CmdOrCtrl+Z", selector: "redo:" },
-						{ type: "separator" },
-						{ label: "Cut", accelerator: "CmdOrCtrl+X", selector: "cut:" },
-						{ label: "Copy", accelerator: "CmdOrCtrl+C", selector: "copy:" },
-						{ label: "Paste", accelerator: "CmdOrCtrl+V", selector: "paste:" },
-						{ label: "Select All", accelerator: "CmdOrCtrl+A", selector: "selectAll:" },
-					],
-				},
-				{
-					label: "Dev",
-					submenu: [{ label: "Open Dev Tools", role: "toggleDevTools" }],
-				},
-			];
-			Menu.setApplicationMenu(Menu.buildFromTemplate(template));
-		}
+		if (!this.checkSingle()) return this.quit();
 
-		if (lib.isWin32()) {
-			// tray flicker
-			app.commandLine.appendSwitch("wm-window-animations-disabled");
-			Menu.setApplicationMenu(null);
-		}
+		createMenu.call(this);
 
 		app.allowRendererProcessReuse = true;
+
+		powerMonitor.on("lock-screen", () => {
+			console.log("lock-screen");
+			this.save();
+		});
 
 		this.lisnten();
 	}

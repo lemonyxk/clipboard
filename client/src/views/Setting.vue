@@ -2,15 +2,33 @@
 	<v-card class="setting" flat>
 		<div class="box">
 			<div class="left">Start At Login</div>
-			<v-switch class="right" v-model="startAtLogin" @change="change" color="primary" hide-details></v-switch>
+			<v-switch class="right" v-model="setting.startAtLogin" @change="change" color="primary" hide-details></v-switch>
 		</div>
 		<div class="box">
 			<div class="left">Click To Copy</div>
-			<v-switch class="right" v-model="clickToCopy" @change="change" color="primary" hide-details></v-switch>
+			<v-switch class="right" v-model="setting.clickToCopy" @change="change" color="primary" hide-details></v-switch>
 		</div>
 		<div class="box">
 			<div class="left">Clear All History</div>
 			<div class="right"><v-btn density="compact" @click="clear">Clear</v-btn></div>
+		</div>
+
+		<div class="box">
+			<div class="left">Page Size</div>
+			<div class="right">
+				<div style="width: 50%">
+					<v-text-field v-model="setting.pageSize" variant="underlined" @blur="pageBlur" density="compact" color="primary"></v-text-field>
+				</div>
+			</div>
+		</div>
+
+		<div class="box">
+			<div class="left">Max Length</div>
+			<div class="right">
+				<div style="width: 50%">
+					<v-text-field v-model="setting.maxLength" variant="underlined" @blur="pageBlur" density="compact" color="primary"></v-text-field>
+				</div>
+			</div>
 		</div>
 	</v-card>
 </template>
@@ -20,21 +38,30 @@ import { ref } from "vue";
 import { subscription } from "../lib/subscription";
 import { on, send } from "../lib/ipc";
 
-var setting = subscription.setting();
-var startAtLogin = ref(setting.startAtLogin);
-var clickToCopy = ref(setting.clickToCopy);
+var raw = subscription.setting();
+
+var setting = ref(raw);
 
 subscription.on("setting", (setting) => {
-	startAtLogin.value = setting.startAtLogin;
-	clickToCopy.value = setting.clickToCopy;
+	setting.value = setting;
 });
 
 function change() {
-	send("setting", { startAtLogin: startAtLogin.value, clickToCopy: clickToCopy.value });
+	send("setting", { ...setting.value }).then((res) => {});
 }
 
 function clear() {
 	send("clear");
+}
+
+function pageBlur() {
+	setting.value.pageSize = parseInt(setting.value.pageSize);
+	if (setting.value.pageSize < 0) setting.value.pageSize = raw.pageSize;
+
+	setting.value.maxLength = parseInt(setting.value.maxLength);
+	if (setting.value.maxLength < 0) setting.value.maxLength = raw.maxLength;
+
+	change();
 }
 
 //
