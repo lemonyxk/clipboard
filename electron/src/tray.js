@@ -2,11 +2,28 @@ const { nativeImage, screen, Menu, Tray } = require("electron");
 const path = require("path");
 const { isWin32 } = require("./lib");
 
+function move(b) {
+	const { width, height } = this;
+	const size = screen.getPrimaryDisplay().size;
+
+	var x = b.x;
+	var y = b.y;
+
+	if (isWin32()) {
+		y = size.height - height - b.height;
+	}
+
+	if (x - width / 2 < 0) {
+		x = 0;
+		this.mainWindow.setPosition(x, y);
+	} else {
+		this.mainWindow.setPosition(x - width / 2, y);
+	}
+}
+
 function createTray() {
 	const icon = nativeImage.createFromPath(path.join(__dirname, "copyTemplate.png"));
 	const tray = new Tray(icon);
-	const { width, height } = this;
-	const size = screen.getPrimaryDisplay().size;
 
 	tray.setToolTip("Clipboard Manager");
 
@@ -18,21 +35,7 @@ function createTray() {
 				clearInterval(t);
 			}
 		}, 100);
-	}).then((b) => {
-		var x = b.x;
-		var y = b.y;
-
-		if (isWin32()) {
-			y = size.height - height - b.height;
-		}
-
-		if (x - width / 2 < 0) {
-			x = 0;
-			this.mainWindow.setPosition(x, y);
-		} else {
-			this.mainWindow.setPosition(x - width / 2, y);
-		}
-	});
+	}).then((b) => move.call(this, b));
 
 	const contextMenu = Menu.buildFromTemplate([
 		{

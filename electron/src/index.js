@@ -44,7 +44,7 @@ class Main {
 	file = this.files[0] ? [this.files[0].text] : [];
 
 	// app config
-	config = { maxLength: 1500, pageSize: 15, ...(this.store.get("setting") || {}) };
+	config = { maxLength: 1500, pageSize: 15, showSize: 15, ...(this.store.get("setting") || {}) };
 
 	init() {
 		if (!this.dev) {
@@ -66,6 +66,8 @@ class Main {
 
 		if (!this.config.pageSize || this.config.pageSize < 1) this.config.pageSize = 15;
 		if (this.config.pageSize > 100) this.config.pageSize = 100;
+		if (!this.config.showSize || this.config.showSize < 1) this.config.showSize = 15;
+		if (this.config.showSize > 20) this.config.showSize = 20;
 		if (!this.config.maxLength || this.config.maxLength < 1) this.config.maxLength = 1500;
 		if (this.config.maxLength > 10000) this.config.maxLength = 10000;
 
@@ -192,8 +194,9 @@ class Main {
 			if (fList.length != 0 && !lib.compare(fList, this.file)) {
 				this.file = fList;
 				var res = [];
+				var t = Date.now();
 				for (let i = 0; i < this.file.length; i++) {
-					var f = { text: this.file[i], time: Date.now(), id: this.inc++ };
+					var f = { text: this.file[i], time: t, id: this.inc++ };
 					this.files.unshift(f);
 					res.push(f);
 				}
@@ -212,7 +215,8 @@ class Main {
 			var nText = clipboard.readText("clipboard");
 			if (nText != "" && this.text != nText) {
 				this.text = nText;
-				var f = { text: this.text, time: Date.now(), id: this.inc++ };
+				var t = Date.now();
+				var f = { text: this.text, time: t, id: this.inc++ };
 				this.texts.unshift(f);
 				if (this.texts.length > this.config.maxLength) this.texts.splice(this.config.maxLength);
 				this.mainWindow.webContents.send("update-clipboard-text", {

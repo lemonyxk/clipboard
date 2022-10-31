@@ -19,7 +19,7 @@ var createTimeTittle = (ts) => {
 var format = (arr) => {
 	var res = [];
 	for (let i = 0; i < arr.length; i++) {
-		res.push({ ...arr[i], time: createTimeTittle(arr[i].time) });
+		res.push({ ...arr[i], date: createTimeTittle(arr[i].time) });
 	}
 	return res;
 };

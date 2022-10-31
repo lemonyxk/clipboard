@@ -2,22 +2,50 @@
 	<v-card class="setting" flat>
 		<div class="box">
 			<div class="left">Start At Login</div>
-			<v-switch class="right" v-model="setting.startAtLogin" @change="change" color="primary" hide-details></v-switch>
+			<div class="right">
+				<div>
+					<v-switch class="switch" v-model="setting.startAtLogin" @change="change" color="primary" hide-details></v-switch>
+				</div>
+			</div>
 		</div>
+
 		<div class="box">
 			<div class="left">Click To Copy</div>
-			<v-switch class="right" v-model="setting.clickToCopy" @change="change" color="primary" hide-details></v-switch>
-		</div>
-		<div class="box">
-			<div class="left">Clear All History</div>
-			<div class="right"><v-btn density="compact" @click="clear">Clear</v-btn></div>
+			<div class="right">
+				<div>
+					<v-switch class="switch" v-model="setting.clickToCopy" @change="change" color="primary" hide-details></v-switch>
+				</div>
+			</div>
 		</div>
 
 		<div class="box">
 			<div class="left">Page Size</div>
 			<div class="right">
-				<div style="width: 50%">
-					<v-text-field v-model="setting.pageSize" variant="underlined" @blur="pageBlur" density="compact" color="primary"></v-text-field>
+				<div>
+					<v-text-field
+						class="input"
+						v-model="setting.pageSize"
+						variant="underlined"
+						@blur="pageBlur"
+						density="compact"
+						color="primary"
+					></v-text-field>
+				</div>
+			</div>
+		</div>
+
+		<div class="box">
+			<div class="left">Show Size</div>
+			<div class="right">
+				<div>
+					<v-text-field
+						class="input"
+						v-model="setting.showSize"
+						variant="underlined"
+						@blur="pageBlur"
+						density="compact"
+						color="primary"
+					></v-text-field>
 				</div>
 			</div>
 		</div>
@@ -25,8 +53,24 @@
 		<div class="box">
 			<div class="left">Max Length</div>
 			<div class="right">
-				<div style="width: 50%">
-					<v-text-field v-model="setting.maxLength" variant="underlined" @blur="pageBlur" density="compact" color="primary"></v-text-field>
+				<div>
+					<v-text-field
+						class="input"
+						v-model="setting.maxLength"
+						variant="underlined"
+						@blur="pageBlur"
+						density="compact"
+						color="primary"
+					></v-text-field>
+				</div>
+			</div>
+		</div>
+
+		<div class="box">
+			<div class="left">Clear All History</div>
+			<div class="right">
+				<div>
+					<v-btn class="button" density="compact" @click="clear">Clear</v-btn>
 				</div>
 			</div>
 		</div>
@@ -42,8 +86,8 @@ var raw = subscription.setting();
 
 var setting = ref(raw);
 
-subscription.on("setting", (setting) => {
-	setting.value = setting;
+subscription.on("setting", (res) => {
+	setting.value = { ...res };
 });
 
 function change() {
@@ -57,6 +101,9 @@ function clear() {
 function pageBlur() {
 	setting.value.pageSize = parseInt(setting.value.pageSize);
 	if (setting.value.pageSize < 0) setting.value.pageSize = raw.pageSize;
+
+	setting.value.showSize = parseInt(setting.value.showSize);
+	if (setting.value.showSize < 0) setting.value.showSize = raw.showSize;
 
 	setting.value.maxLength = parseInt(setting.value.maxLength);
 	if (setting.value.maxLength < 0) setting.value.maxLength = raw.maxLength;
@@ -80,7 +127,7 @@ function pageBlur() {
 
 	.box {
 		width: 100%;
-		height: 48px;
+		height: 42px;
 		display: flex;
 		justify-content: space-around;
 		align-items: center;
@@ -88,7 +135,7 @@ function pageBlur() {
 		.left {
 			width: 50%;
 			height: 100%;
-			line-height: 48px;
+			line-height: 42px;
 			padding-left: 15px;
 		}
 
@@ -99,6 +146,14 @@ function pageBlur() {
 			justify-content: flex-end;
 			align-items: center;
 			padding-right: 15px;
+
+			> div {
+				display: flex;
+				justify-content: flex-end;
+				align-items: center;
+				height: 100%;
+				width: 80px;
+			}
 		}
 	}
 }

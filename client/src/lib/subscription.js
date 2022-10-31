@@ -32,21 +32,17 @@ on("update-clipboard-file", (e, v) => {
 	subscription.emit("file", v);
 });
 
-var keyDown = (e) => {
-	e.preventDefault();
-	subscription.emit("onkeydown", e);
-};
+on("keyDown", (e, v) => {
+	subscription.emit("onkeydown", v);
+});
+
+on("keyUp", (e, v) => {
+	subscription.emit("onkeyup", v);
+});
 
 var subscription = {
 	config: () => config,
 	setting: () => setting,
-
-	startKeyDown: () => {
-		window.addEventListener("keydown", keyDown);
-	},
-	stopKeyDown: () => {
-		window.removeEventListener("keydown", keyDown);
-	},
 
 	emit: (event, data) => {
 		if (!onList[event]) return;

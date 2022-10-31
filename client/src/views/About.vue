@@ -1,8 +1,11 @@
 <script setup>
-const { shell } = window.require("electron");
+import { shell } from "@/lib/shell";
+
 function openURL() {
 	shell.openExternal(`https://github.com/lemonyxk/clipboard`);
 }
+
+//
 </script>
 <template>
 	<h3>Clipboard Manager</h3>

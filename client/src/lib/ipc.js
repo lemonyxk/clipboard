@@ -12,4 +12,8 @@ var on = (event, fn) => {
 	ipcRenderer.on(event, (e, v) => fn(e, v));
 };
 
-export { send, on };
+var remove = (event) => {
+	ipcRenderer.removeAllListeners(event);
+};
+
+export { send, on, remove };

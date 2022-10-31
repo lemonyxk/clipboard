@@ -32,6 +32,16 @@ function createMainWindow() {
 
 	mainWindow.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true });
 
+	mainWindow.webContents.on("before-input-event", (event, input) => {
+		if (input.type == "keyDown") {
+			return mainWindow.webContents.send("keyDown", input);
+		}
+
+		if (input.type == "keyUp") {
+			mainWindow.webContents.send("keyUp", input);
+		}
+	});
+
 	mainWindow.on("hide", (e) => {
 		mainWindow.webContents.send("mainWindow-hide");
 	});

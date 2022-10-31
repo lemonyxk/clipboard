@@ -17,7 +17,7 @@
 					<img :src="hearted" :hidden="!item.favorite" v-if="item.favorite" @click="onHeart(item)" />
 					<img :src="heart" :hidden="hoverId != item.id" v-else @click="onHeart(item)" />
 				</div>
-				<div class="time">{{ item.time }}</div>
+				<div class="time" :style="{ color: [`#333`, `green`, `#999`, `cornflowerblue`][item.time % 4] }">{{ item.date }}</div>
 			</div>
 		</div>
 	</div>
@@ -48,8 +48,8 @@ import hearted from "@/assets/hearted.svg";
 import Preview from "../../components/Preview.vue";
 
 var setting = ref(subscription.setting());
-subscription.on("setting", (setting) => {
-	setting.value = setting;
+subscription.on("setting", (res) => {
+	setting.value = res;
 });
 
 var isShow = true;
@@ -75,8 +75,6 @@ var mouseenterHandler = null;
 function preview(itemRef) {
 	if (hoverIndex < 0) return;
 
-	subscription.stopKeyDown();
-
 	previewItem.value = { item: items.value.data[hoverIndex], blob: "" };
 
 	var react = itemRef.getBoundingClientRect();
@@ -96,10 +94,10 @@ function mouseenter(item, i) {
 }
 
 function mouseleave(item) {
+	if (!previewShow.value) return;
 	mouseenterHandler = setTimeout(() => {
 		previewShow.value = false;
-		subscription.startKeyDown();
-	}, 200);
+	}, 100);
 }
 
 function previewMouseEnter() {
@@ -108,7 +106,6 @@ function previewMouseEnter() {
 
 function previewMouseLeave() {
 	previewShow.value = false;
-	subscription.startKeyDown();
 }
 
 onActivated(() => {
@@ -117,12 +114,16 @@ onActivated(() => {
 			if (page.value == 1) return;
 			page.value--;
 			update();
+			mouseleave();
 		}
+
 		if (e.code == "KeyD" || e.code == "ArrowRight") {
 			if (page.value == getLen()) return;
 			page.value++;
 			update();
+			mouseleave();
 		}
+
 		if (e.code == "ArrowUp") {
 			if (hoverIndex < 1) hoverIndex = 1;
 			hoverIndex--;
@@ -133,7 +134,9 @@ onActivated(() => {
 			if (to < 0) {
 				middle.value.scrollBy({ top: -react.height * 5, behavior: "smooth" });
 			}
+			mouseleave();
 		}
+
 		if (e.code == "ArrowDown") {
 			if (hoverIndex > items.value.data.length - 2) hoverIndex = items.value.data.length - 2;
 			hoverIndex++;
@@ -144,6 +147,7 @@ onActivated(() => {
 			if (to > 0) {
 				middle.value.scrollBy({ top: react.height * 5, behavior: "smooth" });
 			}
+			mouseleave();
 		}
 
 		if (e.code == "Space") {

@@ -1,11 +1,12 @@
 .middle {
 	width: 100%;
-	height: calc(100% - 48px);
+	height: calc(100% - 42px);
 	overflow: auto;
 	position: relative;
 
 	.hover {
 		background-color: burlywood;
+		transition: 0.2s;
 	}
 
 	.deleted {
@@ -56,7 +57,7 @@
 			text-overflow: ellipsis;
 			white-space: nowrap;
 			overflow: hidden;
-			font-weight: 600;
+			font-weight: 500;
 			display: flex;
 			justify-content: flex-start;
 			align-items: center;
@@ -66,18 +67,38 @@
 
 .bottom {
 	width: 100%;
-	height: 48px;
+	height: 42px;
 	display: flex;
 	justify-content: flex-start;
 	align-items: flex-end;
-
+	background-color: gainsboro;
 	// cursor: move;
 	.left {
-		height: 48px;
+		height: 42px;
 		width: 50%;
 		display: flex;
 		justify-content: flex-start;
-		align-items: flex-end;
+		align-items: center;
+	}
+}
+
+.rightMenu {
+	width: 100px;
+	height: 72px;
+	position: absolute;
+	outline: none;
+
+	.content {
+		width: 100%;
+		height: 100%;
+		background-color: #f8f8f8;
+
+		> div {
+			background-color: #f8f8f8;
+			.v-btn {
+				background-color: #f8f8f8;
+			}
+		}
 	}
 }
 
@@ -94,10 +115,29 @@
 	animation: opacityAnimation 0.5s;
 }
 
+@keyframes widthAnimation {
+	0% {
+		scale: 0;
+	}
+
+	80% {
+		scale: 1.1;
+	}
+
+	100% {
+		scale: 1;
+	}
+}
+
+.widthAnimation {
+	animation: widthAnimation 0.2s;
+}
+
 .preview {
 	width: 100%;
 	height: 200px;
 	// background-color: rgba($color: #efefef, $alpha: 1);
 	position: absolute;
 	top: 0;
+	animation: widthAnimation 0.2s ease-out;
 }

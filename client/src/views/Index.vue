@@ -13,17 +13,13 @@ import hearted from "@/assets/hearted.svg";
 import { send } from "@/lib/ipc";
 import { loadTheme } from "@/theme/theme";
 
-subscription.startKeyDown();
-
 subscription.on("setting", () => {
 	loadTheme();
 });
 
 var router = useRouter();
 
-router.beforeEach((to, from) => {
-	// console.log(to, from);
-});
+router.beforeEach((to, from) => {});
 
 var show = ref(true);
 var input = ref();
@@ -101,7 +97,7 @@ subscription.on("onkeydown", (e) => {
 		}
 		return;
 	}
-	if (e.code == "Tab") return input.value.focus();
+	if (e.code == "Tab") return requestAnimationFrame(() => input.value.focus());
 	if (e.code == "Enter") return onSearch();
 	if (e.code == "NumpadEnter") return onSearch();
 	if (e.code == "KeyQ") return onText();
@@ -176,6 +172,8 @@ subscription.on("onkeydown", (e) => {
 		align-items: flex-start;
 
 		.v-input {
+			height: 42px;
+
 			:deep(.v-input__control .v-field) {
 				background-color: rgb(60, 105, 202);
 				color: white;
@@ -200,7 +198,7 @@ subscription.on("onkeydown", (e) => {
 
 		.left {
 			width: 50%;
-			height: 38px;
+			height: 42px;
 			display: flex;
 			justify-content: flex-end;
 			align-items: center;
@@ -211,8 +209,8 @@ subscription.on("onkeydown", (e) => {
 			-webkit-app-region: drag;
 
 			div {
-				width: 42px;
-				height: 38px;
+				width: 40px;
+				height: 42px;
 				display: flex;
 				justify-content: center;
 				align-items: center;

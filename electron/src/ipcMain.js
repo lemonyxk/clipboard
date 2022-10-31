@@ -1,4 +1,4 @@
-const { ipcMain, clipboard, nativeImage, app } = require("electron");
+const { ipcMain, clipboard, nativeImage, app, shell } = require("electron");
 const lib = require("./lib");
 const path = require("path");
 const fs = require("fs");
@@ -35,6 +35,20 @@ function ipc() {
 		if (index == -1) return this.mainWindow.webContents.send("delete-file");
 		this.files.splice(index, 1);
 		return this.mainWindow.webContents.send("delete-file");
+	});
+
+	ipcMain.on("open-file", async (e, item) => {
+		shell
+			.openExternal(item.url)
+			.then((res) => {
+				return this.mainWindow.webContents.send("open-file", true);
+			})
+			.catch((err) => {
+				var index = this.files.findIndex((e) => e.id == item.id);
+				if (index == -1) return;
+				this.files[index].deleted = true;
+				return this.mainWindow.webContents.send("open-file", false);
+			});
 	});
 
 	ipcMain.on("load-image", async (e, item) => {

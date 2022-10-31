@@ -1,7 +1,5 @@
 # clipboard
 
----
-
 [<img src="./text-mode.png" width="400"/>](./text-mode.png)
 [<img src="./files-mode.png" width="400"/>](./files-mode.png)
 [<img src="./search.png" width="400"/>](./search.png)
@@ -11,8 +9,6 @@
 [<img src="./preview.png" width="400"/>](./preview.png)
 [<img src="./preview-1.png" width="400"/>](./preview-1.png)
 [<img src="./setting.png" width="400"/>](./setting.png)
-
----
 
 COMING SOON
 

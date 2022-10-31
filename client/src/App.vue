@@ -3,13 +3,77 @@
 </template>
 
 <style lang="scss">
+@font-face {
+	font-family: "JetBrains Mono";
+	src: url("./fonts/JetBrainsMono-Bold-Italic.woff2") format("woff2"), url("./fonts/JetBrainsMono-Bold-Italic.woff") format("woff");
+	font-weight: 700;
+	font-style: italic;
+	font-display: swap;
+}
+
+@font-face {
+	font-family: "JetBrains Mono";
+	src: url("./fonts/JetBrainsMono-Bold.woff2") format("woff2"), url("./fonts/JetBrainsMono-Bold.woff") format("woff");
+	font-weight: 700;
+	font-style: normal;
+	font-display: swap;
+}
+
+@font-face {
+	font-family: "JetBrains Mono";
+	src: url("./fonts/JetBrainsMono-ExtraBold-Italic.woff2") format("woff2"), url("./fonts/JetBrainsMono-ExtraBold-Italic.woff") format("woff");
+	font-weight: 800;
+	font-style: italic;
+	font-display: swap;
+}
+
+@font-face {
+	font-family: "JetBrains Mono";
+	src: url("./fonts/JetBrainsMono-ExtraBold.woff2") format("woff2"), url("./fonts/JetBrainsMono-ExtraBold.woff") format("woff");
+	font-weight: 800;
+	font-style: normal;
+	font-display: swap;
+}
+
+@font-face {
+	font-family: "JetBrains Mono";
+	src: url("./fonts/JetBrainsMono-Italic.woff2") format("woff2"), url("./fonts/JetBrainsMono-Italic.woff") format("woff");
+	font-weight: 400;
+	font-style: italic;
+	font-display: swap;
+}
+
+@font-face {
+	font-family: "JetBrains Mono";
+	src: url("./fonts/JetBrainsMono-Medium-Italic.woff2") format("woff2"), url("./fonts/JetBrainsMono-Medium-Italic.woff") format("woff");
+	font-weight: 500;
+	font-style: italic;
+	font-display: swap;
+}
+
+@font-face {
+	font-family: "JetBrains Mono";
+	src: url("./fonts/JetBrainsMono-Medium.woff2") format("woff2"), url("./fonts/JetBrainsMono-Medium.woff") format("woff");
+	font-weight: 500;
+	font-style: normal;
+	font-display: swap;
+}
+
+@font-face {
+	font-family: "JetBrains Mono";
+	src: url("./fonts/JetBrainsMono-Regular.woff2") format("woff2"), url("./fonts/JetBrainsMono-Regular.woff") format("woff");
+	font-weight: 400;
+	font-style: normal;
+	font-display: swap;
+}
+
 html {
 	width: 100%;
 	height: 100%;
 	overflow: hidden;
 	background-color: #efefef;
-	// font-family: caption;
-	font-family: "Gill Sans", sans-serif;
+	font-family: "JetBrains Mono";
+	// font-family: "Gill Sans", sans-serif;
 }
 
 * {

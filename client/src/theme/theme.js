@@ -9,10 +9,10 @@ var loadTheme = () => {
 		root.style.setProperty("--item-width", "150px");
 		// getComputedStyle(root).getPropertyValue("--my-color");
 	} else {
-		root.style.setProperty("--item-width", "120px");
+		root.style.setProperty("--item-width", "150px");
 	}
 
-	root.style.setProperty("--item-length", setting.pageSize);
+	root.style.setProperty("--item-length", setting.showSize);
 };
 
 export { loadTheme };

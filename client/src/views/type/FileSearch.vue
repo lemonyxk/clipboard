@@ -8,6 +8,7 @@
 			:class="hoverClass(item)"
 			@mouseenter="mouseenter(item, i)"
 			@mouseleave="mouseleave(item, i)"
+			@contextmenu="contextmenu($event, item, i)"
 		>
 			<div v-if="setting.clickToCopy" class="value" @click="onSelect(item)">{{ item.text }}</div>
 			<div v-else class="value" @dblclick="onSelect(item)">{{ item.text }}</div>
@@ -20,7 +21,7 @@
 					<img :src="hearted" :hidden="!item.favorite" v-if="item.favorite" @click="onHeart(item)" />
 					<img :src="heart" :hidden="hoverId != item.id" v-else @click="onHeart(item)" />
 				</div>
-				<div class="time">{{ item.time }}</div>
+				<div class="time" :style="{ color: [`#333`, `green`, `#999`, `cornflowerblue`][item.time % 4] }">{{ item.date }}</div>
 			</div>
 		</div>
 	</div>
@@ -39,6 +40,17 @@
 	<div class="preview" v-show="previewShow" :style="{ top: previewTop }" @mouseenter="previewMouseEnter" @mouseleave="previewMouseLeave">
 		<Preview :data="previewItem"></Preview>
 	</div>
+
+	<div class="rightMenu" ref="rightMenu" @blur="rightMenuBlur" v-show="rightMenuShow" :style="{ ...rightMenuPos }" :tabindex="0">
+		<v-card class="content">
+			<div>
+				<v-btn variant="flat" @click="openFile">OPEN FILE</v-btn>
+			</div>
+			<div>
+				<v-btn variant="flat" @click="openDir">OPEN DIR</v-btn>
+			</div>
+		</v-card>
+	</div>
 </template>
 
 <script setup>
@@ -50,10 +62,64 @@ import heart from "@/assets/heart.svg";
 import hearted from "@/assets/hearted.svg";
 import deleted from "@/assets/deleted.svg";
 import Preview from "../../components/Preview.vue";
+const path = window.require("path");
+
+function openFile(e) {
+	send("open-file", {
+		url: `file://${rightMenuItem.value.item.text}`,
+		id: rightMenuItem.value.item.id,
+	}).then((res) => {
+		if (!res) items.value.data[rightMenuItem.value.i].deleted = true;
+	});
+}
+
+function openDir(e) {
+	send("open-file", {
+		url: `file://${path.dirname(rightMenuItem.value.item.text)}`,
+		id: rightMenuItem.value.item.id,
+	}).then((res) => {
+		if (!res) items.value.data[rightMenuItem.value.i].deleted = true;
+	});
+}
+
+function contextmenu(e, item, i) {
+	clearTimeout(rightMenuBlurHandler);
+
+	var x = e.layerX + 21;
+	var y = e.layerY - 5;
+	var height = middle.value.clientHeight;
+	var width = middle.value.clientWidth;
+
+	var w = 100;
+	var h = 72;
+
+	if (e.layerX + w > width) {
+		x = x - w - 42;
+	}
+	if (e.layerY + h > height) {
+		y = y - h;
+	}
+
+	rightMenuPos.value = { left: x + "px", top: y + "px" };
+	rightMenuShow.value = true;
+	// MUST DO THIS OR WILL NOT WORK
+	requestAnimationFrame(() => rightMenu.value.focus());
+
+	rightMenuItem.value = { item, i };
+}
+
+function rightMenuBlur(e) {
+	rightMenuBlurHandler = setTimeout(
+		() => {
+			rightMenuShow.value = false;
+		},
+		process.platform == "win32" ? 300 : 150
+	);
+}
 
 var setting = ref(subscription.setting());
-subscription.on("setting", (setting) => {
-	setting.value = setting;
+subscription.on("setting", (res) => {
+	setting.value = res;
 });
 
 var middle = ref();
@@ -68,10 +134,14 @@ var previewItem = ref({});
 var previewTop = ref(0);
 var mouseenterHandler = null;
 
+var rightMenuPos = ref({ top: 0, left: 0 });
+var rightMenuShow = ref(false);
+var rightMenu = ref();
+var rightMenuItem = ref();
+var rightMenuBlurHandler = null;
+
 function preview(itemRef) {
 	if (hoverIndex < 0) return;
-
-	subscription.stopKeyDown();
 
 	send("load-image", { ...items.value.data[hoverIndex] }).then((data) => {
 		if (!data) items.value.data[hoverIndex].deleted = true;
@@ -95,10 +165,10 @@ function mouseenter(item, i) {
 }
 
 function mouseleave(item) {
+	if (!previewShow.value) return;
 	mouseenterHandler = setTimeout(() => {
 		previewShow.value = false;
-		subscription.startKeyDown();
-	}, 200);
+	}, 100);
 }
 
 function previewMouseEnter() {
@@ -107,7 +177,6 @@ function previewMouseEnter() {
 
 function previewMouseLeave() {
 	previewShow.value = false;
-	subscription.startKeyDown();
 }
 var data = {};
 
@@ -117,12 +186,16 @@ onActivated(() => {
 			if (page.value == 1) return;
 			page.value--;
 			update();
+			mouseleave();
 		}
+
 		if (e.code == "KeyD" || e.code == "ArrowRight") {
 			if (page.value == getLen()) return;
 			page.value++;
 			update();
+			mouseleave();
 		}
+
 		if (e.code == "ArrowUp") {
 			if (hoverIndex < 1) hoverIndex = 1;
 			hoverIndex--;
@@ -133,7 +206,9 @@ onActivated(() => {
 			if (to < 0) {
 				middle.value.scrollBy({ top: -react.height * 5, behavior: "smooth" });
 			}
+			mouseleave();
 		}
+
 		if (e.code == "ArrowDown") {
 			if (hoverIndex > items.value.data.length - 2) hoverIndex = items.value.data.length - 2;
 			hoverIndex++;
@@ -144,7 +219,9 @@ onActivated(() => {
 			if (to > 0) {
 				middle.value.scrollBy({ top: react.height * 5, behavior: "smooth" });
 			}
+			mouseleave();
 		}
+
 		if (e.code == "Space") {
 			preview(itemRef.value[hoverIndex]);
 		}
@@ -194,6 +271,7 @@ function update() {
 var onPageChange = () => update();
 
 function onSelect(item) {
+	if (rightMenuShow.value) return;
 	send("clipboard-file", item.text);
 	send("hide-window");
 }
