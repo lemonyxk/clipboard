@@ -2,15 +2,15 @@
 
 ---
 
-[<img src="./text-mode.png" width="500"/>](./text-mode.png)
-[<img src="./files-mode.png" width="500"/>](./files-mode.png)
-[<img src="./search.png" width="500"/>](./search.png)
-[<img src="./search-1.png" width="500"/>](./search-1.png)
-[<img src="./favorite.png" width="500"/>](./favorite.png)
-[<img src="./favorite-1.png" width="500"/>](./favorite-1.png)
-[<img src="./preview.png" width="500"/>](./preview.png)
-[<img src="./preview-1.png" width="500"/>](./preview-1.png)
-[<img src="./setting.png" width="500"/>](./setting.png)
+[<img src="./text-mode.png" width="400"/>](./text-mode.png)
+[<img src="./files-mode.png" width="400"/>](./files-mode.png)
+[<img src="./search.png" width="400"/>](./search.png)
+[<img src="./search-1.png" width="400"/>](./search-1.png)
+[<img src="./favorite.png" width="400"/>](./favorite.png)
+[<img src="./favorite-1.png" width="400"/>](./favorite-1.png)
+[<img src="./preview.png" width="400"/>](./preview.png)
+[<img src="./preview-1.png" width="400"/>](./preview-1.png)
+[<img src="./setting.png" width="400"/>](./setting.png)
 
 ---
 
