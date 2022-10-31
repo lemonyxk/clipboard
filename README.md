@@ -1,35 +1,16 @@
-<style>
-.box {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-
-    flex-wrap: wrap;
-}
-
-.img {
-    width:50%;
-}
-
-</style>
-
 # clipboard
 
 ---
 
-<div class="box">
-
-<img src="./text-mode.png" alt="TEXT-MODE" class="img"/>
-<img src="./files-mode.png" alt="FILES-MODE" class="img"/>
-<img src="./search.png" alt="SEARCH-MODE" class="img"/>
-<img src="./search-1.png" alt="SEARCH-MODE" class="img"/>
-<img src="./favorite.png" alt="FAVORITE" class="img"/>
-<img src="./favorite-1.png" alt="FAVORITE" class="img"/>
-<img src="./preview.png" alt="PREVIEW" class="img"/>
-<img src="./preview-1.png" alt="PREVIEW" class="img"/>
-<img src="./setting.png" alt="SETTING-MODE" class="img"/>
-
-</div>
+[<img src="./text-mode.png" width="250"/>](./text-mode.png)
+[<img src="./files-mode.png" width="250"/>](./text-mode.png)
+[<img src="./search.png" width="250"/>](./text-mode.png)
+[<img src="./search-1.png" width="250"/>](./text-mode.png)
+[<img src="./favorite.png" width="250"/>](./text-mode.png)
+[<img src="./favorite-1.png" width="250"/>](./text-mode.png)
+[<img src="./preview.png" width="250"/>](./text-mode.png)
+[<img src="./preview-1.png" width="250"/>](./text-mode.png)
+[<img src="./setting.png" width="250"/>](./text-mode.png)
 
 ---
 
