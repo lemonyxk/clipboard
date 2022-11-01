@@ -5,6 +5,7 @@ import { getCurrentInstance } from "vue";
 var onList = {};
 var config = { pin: false, favorite: false };
 var setting = store.get("setting") || {};
+var key = true;
 
 on("setting", (e, v) => {
 	setting = v;
@@ -33,16 +34,20 @@ on("update-clipboard-file", (e, v) => {
 });
 
 on("keyDown", (e, v) => {
+	if (!key) return;
 	subscription.emit("onkeydown", v);
 });
 
 on("keyUp", (e, v) => {
+	if (!key) return;
 	subscription.emit("onkeyup", v);
 });
 
 var subscription = {
 	config: () => config,
 	setting: () => setting,
+	startKey: () => (key = true),
+	stopKey: () => (key = false),
 
 	emit: (event, data) => {
 		if (!onList[event]) return;

@@ -38,44 +38,58 @@ function ipc() {
 	});
 
 	ipcMain.on("open-file", async (e, item) => {
+		var fn = () => {
+			var index = this.files.findIndex((e) => e.id == item.id);
+			if (index == -1) return;
+			this.files[index].deleted = true;
+		};
+
+		if (!fs.existsSync(item.url)) {
+			fn();
+			return this.mainWindow.webContents.send("open-file", false);
+		}
+
+		if (item.dir) {
+			shell.showItemInFolder(item.url);
+			return this.mainWindow.webContents.send("open-file", true);
+		}
+
 		shell
-			.openExternal(item.url)
-			.then((res) => {
-				return this.mainWindow.webContents.send("open-file", true);
-			})
+			.openExternal(`file://${item.url}`)
+			.then((res) => this.mainWindow.webContents.send("open-file", true))
 			.catch((err) => {
-				var index = this.files.findIndex((e) => e.id == item.id);
-				if (index == -1) return;
-				this.files[index].deleted = true;
-				return this.mainWindow.webContents.send("open-file", false);
+				fn();
+				this.mainWindow.webContents.send("open-file", false);
 			});
 	});
 
 	ipcMain.on("load-image", async (e, item) => {
-		try {
+		var fn = () => {
+			var index = this.files.findIndex((e) => e.id == item.id);
+			if (index == -1) return;
+			this.files[index].deleted = true;
+		};
+
+		if (!fs.existsSync(item.text)) {
+			fn();
+			return this.mainWindow.webContents.send("load-image");
+		}
+
+		if (lib.isMac()) {
 			var img = await nativeImage.createThumbnailFromPath(`${item.text}`, { width: 256, height: 256 });
 			var data = img.toPNG().toString("base64");
 			this.mainWindow.webContents.send("load-image", `data:${`image/png`};base64,${data}`);
-		} catch (error) {
-			if (lib.isWin32()) {
-				try {
-					fs.statSync(`${item.text}`);
-					var img = await app.getFileIcon(`${item.text}`);
-					var data = img.toPNG().toString("base64");
-					this.mainWindow.webContents.send("load-image", `data:${`image/png`};base64,${data}`);
-				} catch (error) {
-					var index = this.files.findIndex((e) => e.id == item.id);
-					if (index == -1) return;
-					this.files[index].deleted = true;
-					this.mainWindow.webContents.send("load-image");
-				}
-			}
+		}
 
-			if (lib.isMac()) {
-				var index = this.files.findIndex((e) => e.id == item.id);
-				if (index == -1) return;
-				this.files[index].deleted = true;
-				this.mainWindow.webContents.send("load-image");
+		if (lib.isWin32()) {
+			try {
+				var img = await nativeImage.createThumbnailFromPath(`${item.text}`, { width: 256, height: 256 });
+				var data = img.toPNG().toString("base64");
+				this.mainWindow.webContents.send("load-image", `data:${`image/png`};base64,${data}`);
+			} catch (error) {
+				var img = await app.getFileIcon(`${item.text}`);
+				var data = img.toPNG().toString("base64");
+				this.mainWindow.webContents.send("load-image", `data:${`image/png`};base64,${data}`);
 			}
 		}
 	});

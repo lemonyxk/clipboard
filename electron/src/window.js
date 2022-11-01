@@ -33,6 +33,8 @@ function createMainWindow() {
 	mainWindow.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true });
 
 	mainWindow.webContents.on("before-input-event", (event, input) => {
+		if (input.code == "Tab") event.preventDefault();
+
 		if (input.type == "keyDown") {
 			return mainWindow.webContents.send("keyDown", input);
 		}
@@ -84,8 +86,8 @@ function createSettingWindow() {
 	var settingWindow = new BrowserWindow({
 		width: dev ? 400 + 500 : 400,
 		height: 400,
-		minWidth: 300,
-		minHeight: 300,
+		minWidth: 400,
+		minHeight: 400,
 		icon: path.join(__dirname, "clipboard.icns"),
 
 		resizable: true,
@@ -147,10 +149,10 @@ function createAboutWindow() {
 	var { width, height, dev } = this;
 
 	var aboutWindow = new BrowserWindow({
-		width: 300,
-		height: 300,
-		minWidth: 300,
-		minHeight: 300,
+		width: dev ? 400 + 500 : 400,
+		height: 400,
+		minWidth: 400,
+		minHeight: 400,
 		icon: path.join(__dirname, "clipboard.icns"),
 
 		resizable: false,
@@ -202,6 +204,8 @@ function createAboutWindow() {
 	} else {
 		aboutWindow.loadFile(path.join(__dirname, "/dist/index.html"), { hash: "/about" });
 	}
+
+	if (dev) aboutWindow.webContents.openDevTools();
 
 	return aboutWindow;
 }

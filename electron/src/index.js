@@ -1,7 +1,6 @@
 const { app, BrowserWindow, powerMonitor } = require("electron");
 const { globalShortcut, clipboard } = require("electron");
 const Store = require("electron-store");
-Store.initRenderer();
 const path = require("path");
 const fs = require("fs");
 const lib = require("./lib");
@@ -51,7 +50,7 @@ class Main {
 			var log = path.join(__dirname, "log");
 			var fd = fs.openSync(log, "a+");
 			console.log = (...args) => {
-				fs.writeSync(fd, args.toString() + "\n");
+				fs.writeSync(fd, Date.now().toString() + " " + args.toString() + "\n");
 			};
 		}
 	}
@@ -61,7 +60,9 @@ class Main {
 
 		// start at login
 		if (!this.dev) {
-			app.setLoginItemSettings({ openAtLogin: this.config.startAtLogin, openAsHidden: true });
+			if (!app.getLoginItemSettings().openAtLogin) {
+				app.setLoginItemSettings({ openAtLogin: this.config.startAtLogin, openAsHidden: true });
+			}
 		}
 
 		if (!this.config.pageSize || this.config.pageSize < 1) this.config.pageSize = 15;
@@ -181,12 +182,7 @@ class Main {
 	}
 
 	loop() {
-		setInterval(() => {
-			this.store.set("texts", this.texts);
-			this.store.set("files", this.files);
-			this.store.set("textsFavorite", this.textsFavorite);
-			this.store.set("filesFavorite", this.filesFavorite);
-		}, 1000 * 60 * 30);
+		setInterval(() => this.save(), 1000 * 60 * 30);
 
 		setInterval(() => {
 			var fList = lib.readFiles();
@@ -258,6 +254,8 @@ class Main {
 		this.lisnten();
 	}
 }
+
+Store.initRenderer();
 
 const main = new Main();
 

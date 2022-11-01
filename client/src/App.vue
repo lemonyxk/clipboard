@@ -71,7 +71,7 @@ html {
 	width: 100%;
 	height: 100%;
 	overflow: hidden;
-	background-color: #efefef;
+	background-color: rgba(0, 0, 0, 0);
 	font-family: "JetBrains Mono";
 	// font-family: "Gill Sans", sans-serif;
 }
@@ -86,6 +86,8 @@ html {
 body {
 	width: 100%;
 	height: 100%;
+	background-color: rgba(0, 0, 0, 0);
+	border-radius: 10px;
 }
 
 #app {
@@ -95,6 +97,13 @@ body {
 	justify-content: center;
 	align-items: center;
 	flex-direction: column;
+	background-color: #efefef;
+	border-radius: 10px;
+}
+
+::selection {
+	// color: #ccc;
+	background: rgb(196, 196, 218);
 }
 
 ::-webkit-scrollbar {

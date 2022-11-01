@@ -139,24 +139,28 @@ var rightMenuShow = ref(false);
 var rightMenu = ref();
 var rightMenuItem = ref();
 var rightMenuBlurHandler = null;
+var previewHandler = null;
 
 function preview(itemRef) {
-	if (hoverIndex < 0) return;
+	clearTimeout(previewHandler);
+	previewHandler = setTimeout(() => {
+		if (hoverIndex < 0) return;
 
-	send("load-image", { ...items.value.data[hoverIndex] }).then((data) => {
-		if (!data) items.value.data[hoverIndex].deleted = true;
-		previewItem.value = { item: items.value.data[hoverIndex], blob: data };
-	});
+		send("load-image", { ...items.value.data[hoverIndex] }).then((data) => {
+			if (!data) items.value.data[hoverIndex].deleted = true;
+			previewItem.value = { item: items.value.data[hoverIndex], blob: data };
+		});
 
-	var react = itemRef.getBoundingClientRect();
-	var top = react.bottom - 42;
-	let to = 42 + middle.value.clientHeight - react.bottom;
-	if (to < 200 + 12) {
-		top = react.bottom - 200 - react.height - 42;
-	}
-	previewTop.value = top + "px";
+		var react = itemRef.getBoundingClientRect();
+		var top = react.bottom - 42;
+		let to = 42 + middle.value.clientHeight - react.bottom;
+		if (to < 200 + 12) {
+			top = react.bottom - 200 - react.height - 42;
+		}
+		previewTop.value = top + "px";
 
-	previewShow.value = true;
+		previewShow.value = true;
+	}, 100);
 }
 
 function mouseenter(item, i) {
@@ -167,8 +171,8 @@ function mouseenter(item, i) {
 function mouseleave(item) {
 	if (!previewShow.value) return;
 	mouseenterHandler = setTimeout(() => {
-		previewShow.value = false;
-	}, 100);
+		previewMouseLeave();
+	}, 200);
 }
 
 function previewMouseEnter() {
@@ -177,16 +181,20 @@ function previewMouseEnter() {
 
 function previewMouseLeave() {
 	previewShow.value = false;
+	window.getSelection().empty();
 }
 var data = {};
 
 onActivated(() => {
 	subscription.on("onkeydown", (e) => {
+		if (e.control || e.meta || e.alt || e.shift) return;
+
 		if (e.code == "KeyA" || e.code == "ArrowLeft") {
 			if (page.value == 1) return;
 			page.value--;
 			update();
 			mouseleave();
+			return;
 		}
 
 		if (e.code == "KeyD" || e.code == "ArrowRight") {
@@ -194,9 +202,10 @@ onActivated(() => {
 			page.value++;
 			update();
 			mouseleave();
+			return;
 		}
 
-		if (e.code == "ArrowUp") {
+		if (e.code == "KeyW" || e.code == "ArrowUp") {
 			if (hoverIndex < 1) hoverIndex = 1;
 			hoverIndex--;
 			hoverId.value = items.value.data[hoverIndex]?.id;
@@ -206,10 +215,17 @@ onActivated(() => {
 			if (to < 0) {
 				middle.value.scrollBy({ top: -react.height * 5, behavior: "smooth" });
 			}
-			mouseleave();
+
+			if (previewShow.value) {
+				preview(itemRef.value[hoverIndex]);
+			} else {
+				mouseleave();
+			}
+
+			return;
 		}
 
-		if (e.code == "ArrowDown") {
+		if (e.code == "KeyS" || e.code == "ArrowDown") {
 			if (hoverIndex > items.value.data.length - 2) hoverIndex = items.value.data.length - 2;
 			hoverIndex++;
 			hoverId.value = items.value.data[hoverIndex]?.id;
@@ -219,11 +235,31 @@ onActivated(() => {
 			if (to > 0) {
 				middle.value.scrollBy({ top: react.height * 5, behavior: "smooth" });
 			}
-			mouseleave();
+
+			if (previewShow.value) {
+				preview(itemRef.value[hoverIndex]);
+			} else {
+				mouseleave();
+			}
+
+			return;
 		}
 
 		if (e.code == "Space") {
 			preview(itemRef.value[hoverIndex]);
+			return;
+		}
+
+		if (e.code == "Enter") {
+			if (hoverIndex < 0) return;
+			onSelect(items.value.data[hoverIndex]);
+			return;
+		}
+
+		if (e.code == "NumpadEnter") {
+			if (hoverIndex < 0) return;
+			onSelect(items.value.data[hoverIndex]);
+			return;
 		}
 	});
 });

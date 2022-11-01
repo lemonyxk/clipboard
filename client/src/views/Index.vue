@@ -49,7 +49,12 @@ function onKeyEnter(e) {
 }
 
 function onBlur() {
+	subscription.startKey();
 	if (searchText.value == "") return resetSearch();
+}
+
+function onFocus() {
+	subscription.stopKey();
 }
 
 var isPin = ref(false);
@@ -100,10 +105,10 @@ subscription.on("onkeydown", (e) => {
 	if (e.code == "Tab") return requestAnimationFrame(() => input.value.focus());
 	if (e.code == "Enter") return onSearch();
 	if (e.code == "NumpadEnter") return onSearch();
-	if (e.code == "KeyQ") return onText();
-	if (e.code == "KeyW") return onDocument();
-	if (e.code == "KeyE") return onFavorite();
-	if (e.code == "KeyR") return onPin();
+	if ((e.code == "KeyQ" && e.alt) || e.code == "Digit1") return onText();
+	if ((e.code == "KeyW" && e.alt) || e.code == "Digit2") return onDocument();
+	if ((e.code == "KeyE" && e.alt) || e.code == "Digit3") return onFavorite();
+	if ((e.code == "KeyR" && e.alt) || e.code == "Digit4") return onPin();
 });
 
 //
@@ -127,6 +132,7 @@ subscription.on("onkeydown", (e) => {
 				@click:append-inner="onSearch"
 				@keydown="onKeyEnter"
 				@blur="onBlur"
+				@focus="onFocus"
 			></v-text-field>
 		</div>
 
@@ -163,6 +169,7 @@ subscription.on("onkeydown", (e) => {
 	justify-content: center;
 	align-items: flex-start;
 	flex-direction: column;
+	border-radius: 10px;
 
 	.top {
 		width: 100%;
@@ -170,6 +177,7 @@ subscription.on("onkeydown", (e) => {
 		display: flex;
 		justify-content: center;
 		align-items: flex-start;
+		border-radius: 10px;
 
 		.v-input {
 			height: 42px;
@@ -177,7 +185,7 @@ subscription.on("onkeydown", (e) => {
 			:deep(.v-input__control .v-field) {
 				background-color: rgb(60, 105, 202);
 				color: white;
-				border-radius: 0;
+				border-radius: 8px 8px 0 0;
 			}
 		}
 	}
@@ -189,11 +197,13 @@ subscription.on("onkeydown", (e) => {
 		justify-content: center;
 		align-items: flex-start;
 		position: relative;
+		border-radius: 10px;
 
 		.right {
 			// width: calc(100% - 24px);
 			width: 100%;
 			height: 100%;
+			border-radius: 10px;
 		}
 
 		.left {
@@ -207,6 +217,7 @@ subscription.on("onkeydown", (e) => {
 			bottom: 0;
 			right: 0;
 			-webkit-app-region: drag;
+			border-radius: 10px;
 
 			div {
 				width: 40px;

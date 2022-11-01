@@ -123,7 +123,7 @@ function pageBlur() {
 	justify-content: flex-start;
 	align-items: center;
 	flex-direction: column;
-	background: none;
+	background-color: #efefef;
 
 	.box {
 		width: 100%;

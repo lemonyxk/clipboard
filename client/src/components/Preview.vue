@@ -1,6 +1,6 @@
 <template>
 	<div class="content">
-		<v-card class="text">
+		<v-card class="text" :style="{ width: props.data.blob != '' ? '69%' : '100%' }">
 			{{ props.data.item?.text }}
 		</v-card>
 
@@ -36,7 +36,9 @@ var props = defineProps({ data: Object });
 		height: 100%;
 		user-select: text;
 		overflow: auto;
-		background-color: #e4dfd1;
+		// background-color: #e4dfd1;
+		background-color: rgba($color: #f3f3f3, $alpha: 0.7);
+		backdrop-filter: blur(6px);
 		padding: 4px;
 		color: #222;
 	}
@@ -57,6 +59,7 @@ var props = defineProps({ data: Object });
 			justify-content: center;
 			align-items: center;
 			background-color: rgba($color: #333, $alpha: 0);
+			backdrop-filter: blur(6px);
 
 			img {
 				width: auto;
