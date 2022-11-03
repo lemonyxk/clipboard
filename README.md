@@ -8,6 +8,7 @@
 [<img src="./favorite-1.png" width="400"/>](./favorite-1.png)
 [<img src="./preview.png" width="400"/>](./preview.png)
 [<img src="./preview-1.png" width="400"/>](./preview-1.png)
+[<img src="./right-click.png" width="400"/>](./right-click.png)
 [<img src="./setting.png" width="400"/>](./setting.png)
 
 ### HOT KEY
