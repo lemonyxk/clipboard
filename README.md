@@ -45,7 +45,6 @@ OTHER
 -   [x] Support setting page size and total size.
 -   [x] Support press up and down to select (Default is the top one).
 -   [x] AltOrCommand+B to show.
--   [x] Multiple desktops to show.
 
 ### MAYBE:
 
