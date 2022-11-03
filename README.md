@@ -37,7 +37,7 @@ OTHER
 ### COMING SOON
 
 -   [x] Use JetBrains Mono fonts.
--   [ ] Multiple file copy (Color by timeline).
+-   [x] Multiple file copy (Color by timeline).
 -   [x] File preview (Alt or mousemove)
 -   [x] Right click to open the file or dir.
 -   [x] Allow to move window and resize.
@@ -49,4 +49,4 @@ OTHER
 ### MAYBE:
 
 -   [ ] Remark.
--   [ ] Export and Import.
+-   [x] Export and Import.

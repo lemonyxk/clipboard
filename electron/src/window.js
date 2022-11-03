@@ -12,6 +12,8 @@ function createMainWindow() {
 		icon: path.join(__dirname, "clipboard.icns"),
 
 		resizable: true,
+		minimizable: false,
+		maximizable: false,
 
 		show: false,
 		transparent: true,
@@ -36,7 +38,7 @@ function createMainWindow() {
 		if (input.code == "Tab") event.preventDefault();
 
 		if (input.type == "keyDown") {
-			return mainWindow.webContents.send("keyDown", input);
+			mainWindow.webContents.send("keyDown", input);
 		}
 
 		if (input.type == "keyUp") {
@@ -91,6 +93,8 @@ function createSettingWindow() {
 		icon: path.join(__dirname, "clipboard.icns"),
 
 		resizable: true,
+		minimizable: false,
+		maximizable: false,
 
 		show: false,
 		// transparent: true,
@@ -156,6 +160,8 @@ function createAboutWindow() {
 		icon: path.join(__dirname, "clipboard.icns"),
 
 		resizable: false,
+		minimizable: false,
+		maximizable: false,
 
 		show: false,
 		// transparent: true,

@@ -44,9 +44,11 @@
 				justify-content: flex-end;
 				display: flex;
 				align-items: center;
+
 				img {
 					width: 16px;
 					height: 16px;
+					animation: opacityAnimation 1s;
 				}
 			}
 		}
@@ -84,8 +86,8 @@
 }
 
 .rightMenu {
-	width: 100px;
-	height: 72px;
+	width: 150px;
+	height: calc(36px * 3);
 	position: absolute;
 	outline: none;
 
@@ -97,41 +99,15 @@
 		> div {
 			background-color: #f8f8f8;
 			.v-btn {
+				width: 100%;
+				// height: 100%;
 				background-color: #f8f8f8;
+				display: flex;
+				justify-content: flex-start;
+				align-items: center;
 			}
 		}
 	}
-}
-
-@keyframes opacityAnimation {
-	from {
-		opacity: 0;
-	}
-	to {
-		opacity: 1;
-	}
-}
-
-.opacityAnimation {
-	animation: opacityAnimation 0.5s;
-}
-
-@keyframes widthAnimation {
-	0% {
-		scale: 0;
-	}
-
-	80% {
-		scale: 1.1;
-	}
-
-	100% {
-		scale: 1;
-	}
-}
-
-.widthAnimation {
-	animation: widthAnimation 0.2s;
 }
 
 .preview {

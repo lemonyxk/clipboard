@@ -50,7 +50,7 @@ class Main {
 			var log = path.join(__dirname, "log");
 			var fd = fs.openSync(log, "a+");
 			console.log = (...args) => {
-				fs.writeSync(fd, Date.now().toString() + " " + args.toString() + "\n");
+				fs.writeSync(fd, new Date().toISOString() + " " + args.toString() + "\n");
 			};
 		}
 	}
@@ -137,7 +137,7 @@ class Main {
 			this.initTray();
 			this.ipcMain();
 
-			this.loop();
+			this.startLoop();
 		});
 
 		// Quit when all windows are closed.
@@ -181,12 +181,16 @@ class Main {
 		ipc.call(this);
 	}
 
-	loop() {
-		setInterval(() => this.save(), 1000 * 60 * 30);
+	stopLoop() {
+		clearInterval(this.saveTimer);
+		clearInterval(this.filesTimer);
+	}
 
-		setInterval(() => {
+	startLoop() {
+		this.saveTimer = setInterval(() => this.save(), 1000 * 60 * 30);
+
+		this.filesTimer = setInterval(() => {
 			var fList = lib.readFiles();
-
 			if (fList.length != 0 && !lib.compare(fList, this.file)) {
 				this.file = fList;
 				var res = [];

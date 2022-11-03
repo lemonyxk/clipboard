@@ -49,6 +49,9 @@
 			<div>
 				<v-btn variant="flat" @click="openDir">OPEN DIR</v-btn>
 			</div>
+			<div>
+				<v-btn variant="flat" @click="copyBatch">COPY BATCH</v-btn>
+			</div>
 		</v-card>
 	</div>
 </template>
@@ -62,6 +65,10 @@ import heart from "@/assets/heart.svg";
 import hearted from "@/assets/hearted.svg";
 import deleted from "@/assets/deleted.svg";
 import Preview from "../../components/Preview.vue";
+
+function copyBatch(e) {
+	send("clipboard-batch", { ...rightMenuItem.value.item });
+}
 
 function openFile(e) {
 	send("open-file", {
@@ -84,14 +91,17 @@ function openDir(e) {
 }
 
 function contextmenu(e, item, i) {
+	shouldHover = false;
+
 	clearTimeout(rightMenuBlurHandler);
+
 	var x = e.layerX + 21;
 	var y = e.layerY - 5;
 	var height = middle.value.clientHeight;
 	var width = middle.value.clientWidth;
 
-	var w = 100;
-	var h = 72;
+	var w = 150;
+	var h = 36 * 3;
 
 	if (e.layerX + w > width) {
 		x = x - w - 42;
@@ -109,6 +119,8 @@ function contextmenu(e, item, i) {
 }
 
 function rightMenuBlur(e) {
+	shouldHover = true;
+
 	rightMenuBlurHandler = setTimeout(
 		() => {
 			rightMenuShow.value = false;
@@ -136,6 +148,7 @@ var page = ref(1);
 var items = ref({});
 var hoverId = ref();
 var hoverIndex = -1;
+var shouldHover = true;
 
 var previewShow = ref(false);
 var previewItem = ref({});
@@ -172,11 +185,13 @@ function preview(itemRef) {
 }
 
 function mouseenter(item, i) {
+	if (!shouldHover) return;
 	hoverId.value = item.id;
 	hoverIndex = i;
 }
 
 function mouseleave(item) {
+	if (!shouldHover) return;
 	if (!previewShow.value) return;
 	mouseenterHandler = setTimeout(() => {
 		previewMouseLeave();

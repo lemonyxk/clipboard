@@ -2,6 +2,10 @@
 	<router-view></router-view>
 </template>
 
+<script setup>
+//
+</script>
+
 <style lang="scss">
 @font-face {
 	font-family: "JetBrains Mono";
@@ -128,5 +132,36 @@ body {
 .none-scrollbar::-webkit-scrollbar {
 	width: 0px;
 	height: 0px;
+}
+
+@keyframes opacityAnimation {
+	from {
+		opacity: 0;
+	}
+	to {
+		opacity: 1;
+	}
+}
+
+.opacityAnimation {
+	animation: opacityAnimation 0.5s;
+}
+
+@keyframes widthAnimation {
+	0% {
+		scale: 0;
+	}
+
+	80% {
+		scale: 1.1;
+	}
+
+	100% {
+		scale: 1;
+	}
+}
+
+.widthAnimation {
+	animation: widthAnimation 0.2s;
 }
 </style>

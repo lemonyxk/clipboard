@@ -67,6 +67,24 @@
 		</div>
 
 		<div class="box">
+			<div class="left">Export</div>
+			<div class="right">
+				<div>
+					<v-btn class="button" density="compact" @click="exportData">Export</v-btn>
+				</div>
+			</div>
+		</div>
+
+		<div class="box">
+			<div class="left">Import</div>
+			<div class="right">
+				<div>
+					<v-btn class="button" density="compact" @click="importData">Import</v-btn>
+				</div>
+			</div>
+		</div>
+
+		<div class="box">
 			<div class="left">Clear All History</div>
 			<div class="right">
 				<div>
@@ -109,6 +127,14 @@ function pageBlur() {
 	if (setting.value.maxLength < 0) setting.value.maxLength = raw.maxLength;
 
 	change();
+}
+
+function exportData() {
+	send("export");
+}
+
+function importData() {
+	send("import");
 }
 
 //

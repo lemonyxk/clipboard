@@ -1,4 +1,4 @@
-const { ipcMain, clipboard, nativeImage, app, shell } = require("electron");
+const { ipcMain, clipboard, nativeImage, app, shell, dialog } = require("electron");
 const lib = require("./lib");
 const path = require("path");
 const fs = require("fs");
@@ -23,11 +23,19 @@ function ipc() {
 		this.filesFavorite = [];
 		this.store.set("setting", setting);
 		this.mainWindow.reload();
-		lib.showMessage("clear success!!!");
+		lib.showMessage("Clear Success");
 	});
 
 	ipcMain.on("hide-window", () => {
 		this.mainWindow.hide();
+	});
+
+	ipcMain.on("export", () => {
+		lib.exportData.call(this);
+	});
+
+	ipcMain.on("import", () => {
+		lib.importData.call(this);
 	});
 
 	ipcMain.on("delete-file", (e, item) => {
@@ -128,6 +136,33 @@ function ipc() {
 
 	ipcMain.on("clipboard-file", (e, file) => {
 		lib.writeFiles([file]);
+	});
+
+	ipcMain.on("clipboard-batch", (e, item) => {
+		var index = -1;
+		for (let i = 0; i < this.files.length; i++) {
+			if (this.files[i].time == item.time) {
+				index = i;
+				break;
+			}
+		}
+
+		if (index == -1) return;
+
+		var res = [];
+		for (let i = index; i < this.files.length; i++) {
+			if (this.files[i].time != item.time) break;
+			res.unshift(this.files[i].text);
+		}
+
+		this.stopLoop();
+
+		// ignore files event
+		this.file = res;
+
+		lib.writeFiles(res);
+
+		lib.showMessage(`${res.length} Items Copy Success`).then(() => this.startLoop());
 	});
 
 	ipcMain.on("get-clipboard-text", (e, info) => {

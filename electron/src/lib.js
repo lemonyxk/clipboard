@@ -8,16 +8,69 @@ function showMessage(message) {
 	return dialog.showMessageBox(null, { message, type: "info", icon: icon });
 }
 
+var exportDataFlag = false;
+function exportData() {
+	if (exportDataFlag) return;
+	exportDataFlag = true;
+	dialog
+		.showSaveDialog(null, {
+			title: "Export Data",
+			defaultPath: `clipboard-${new Date().toISOString()}.json`,
+		})
+		.then((f) => {
+			fs.writeFileSync(
+				f.filePath,
+				JSON.stringify({
+					texts: this.texts,
+					files: this.files,
+					textsFavorite: this.textsFavorite,
+					filesFavorite: this.filesFavorite,
+				})
+			);
+
+			lib.showMessage("Export Data Success");
+		})
+		.finally(() => {
+			exportDataFlag = false;
+		});
+}
+
+var importDataFlag = false;
+function importData() {
+	if (importDataFlag) return;
+	importDataFlag = true;
+	dialog
+		.showOpenDialog({
+			title: "Import Data",
+			properties: ["openFile"],
+		})
+		.then((f) => {
+			var str = fs.readFileSync(f.filePaths[0]).toString();
+			var res = JSON.parse(str);
+			this.texts = res.texts;
+			this.files = res.files;
+			this.textsFavorite = res.textsFavorite;
+			this.filesFavorite = res.filesFavorite;
+		})
+		.finally(() => {
+			importDataFlag = false;
+		});
+}
+
 function compare(arr1, arr2) {
 	if (arr1.length != arr2.length) {
 		return false;
 	}
 
-	var swap1 = arr1.length > arr2.length ? arr1 : arr2;
-	var swap2 = arr1.length > arr2.length ? arr2 : arr1;
+	var obj = {};
+	for (let i = 0; i < arr1.length; i++) {
+		obj[arr1[i]] = true;
+	}
 
-	for (let i = 0; i < swap1.length; i++) {
-		if (swap1[i] != swap2[i]) return false;
+	for (let i = 0; i < arr2.length; i++) {
+		if (!obj[arr2[i]]) {
+			return false;
+		}
 	}
 
 	return true;
@@ -43,16 +96,20 @@ function parsePList(str) {
 function formatPList(arr) {
 	if (arr.length === 0) return "";
 
-	var str = `<?xml version="1.0" encoding="UTF-8"?>
-	<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
-	<plist version="1.0">
-	<array>`;
-
+	var format = "";
 	for (let i = 0; i < arr.length; i++) {
-		str += `<string>` + arr[i] + `</string>`;
+		format += `<string>` + arr[i] + `</string>\n`;
 	}
 
-	str += `</array>
+	var str =
+		`<?xml version="1.0" encoding="UTF-8"?>
+	<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+	<plist version="1.0">
+	<array>
+		` +
+		format +
+		`
+	</array>
 	</plist>`;
 
 	return str;
@@ -79,7 +136,7 @@ function writeFiles(arr) {
 
 	fs.stat(arr[0], (err) => {
 		if (err) {
-			showMessage("Clipboard", arr[0] + " not exists!");
+			showMessage("Clipboard", arr[0] + " Not Exists");
 			return;
 		}
 
@@ -104,4 +161,4 @@ function isMac() {
 	return process.platform == "darwin";
 }
 
-module.exports = { compare, writeFiles, readFiles, showMessage, isWin32, isMac };
+module.exports = { compare, writeFiles, readFiles, showMessage, isWin32, isMac, importData, exportData };

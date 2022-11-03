@@ -18,7 +18,6 @@ subscription.on("setting", () => {
 });
 
 var router = useRouter();
-
 router.beforeEach((to, from) => {});
 
 var show = ref(true);
@@ -42,7 +41,8 @@ function onSearch() {
 }
 
 function onKeyEnter(e) {
-	e.stopPropagation();
+	// e.stopPropagation();
+	// e.preventDefault();
 	if (e.code == "Escape") return resetSearch();
 	if (e.code == "Enter") return onSearch();
 	if (e.code == "NumpadEnter") return onSearch();
@@ -95,7 +95,8 @@ function onFavorite() {
 subscription.on("onkeydown", (e) => {
 	if (e.code == "Escape") {
 		if (searchText.value == "" && !input.value.active) {
-			send("hide-window");
+			// DISABLE MAC NOISE
+			requestAnimationFrame(() => send("hide-window"));
 		} else {
 			searchText.value = "";
 			onBlur();
@@ -128,6 +129,7 @@ subscription.on("onkeydown", (e) => {
 				hide-details
 				spellcheck="false"
 				ref="input"
+				:autofocus="false"
 				@click:clear="resetSearch"
 				@click:append-inner="onSearch"
 				@keydown="onKeyEnter"
@@ -218,6 +220,7 @@ subscription.on("onkeydown", (e) => {
 			right: 0;
 			-webkit-app-region: drag;
 			border-radius: 10px;
+			cursor: move;
 
 			div {
 				width: 40px;
@@ -227,6 +230,7 @@ subscription.on("onkeydown", (e) => {
 				align-items: center;
 				padding: 0 10px;
 				-webkit-app-region: no-drag;
+				cursor: default;
 				img {
 					width: 18px;
 					height: 18px;
