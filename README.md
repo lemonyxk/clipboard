@@ -1,4 +1,4 @@
-# clipboard
+# CLIPBOARD
 
 [<img src="./text-mode.png" width="400"/>](./text-mode.png)
 [<img src="./files-mode.png" width="400"/>](./files-mode.png)
@@ -10,7 +10,31 @@
 [<img src="./preview-1.png" width="400"/>](./preview-1.png)
 [<img src="./setting.png" width="400"/>](./setting.png)
 
-COMING SOON
+### HOT KEY
+
+MODE
+
+-   Number 1: Text Mode
+-   Number 2: File Mode
+-   Number 3: Favorite Mode
+-   Number 4: Pin Mode
+
+DIRECTION
+
+-   W & ArrowUp : Move Up
+-   S & ArrorDown : Move Down
+-   A & ArrowLeft : Prev Page
+-   D & ArrowRight : Next Page
+
+OTHER
+
+-   Space : Preview Selected
+-   Command Or Alt + B : Show
+-   Enter : Copy Selected Or Search
+-   Esc : Hide Or Blur Search Input
+-   Tab : Focus Search Input
+
+### COMING SOON
 
 -   [x] Use JetBrains Mono fonts.
 -   [ ] Multiple file copy (Color by timeline).
@@ -22,7 +46,7 @@ COMING SOON
 -   [x] AltOrCommand+B to show.
 -   [x] Multiple desktops to show.
 
-MAYBE:
+### MAYBE:
 
 -   [ ] Remark.
 -   [ ] Export and Import.
