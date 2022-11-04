@@ -233,6 +233,7 @@ class Main {
 		this.store.set("files", this.files);
 		this.store.set("textsFavorite", this.textsFavorite);
 		this.store.set("filesFavorite", this.filesFavorite);
+		console.log("save at", new Date().toISOString());
 	}
 
 	quit() {

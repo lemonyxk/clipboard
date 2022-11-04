@@ -104,28 +104,30 @@ function ipc() {
 
 	ipcMain.on("clipboard-favorite", (e, info) => {
 		if (info.type == "text") {
-			var index = this.texts.findIndex((e) => e.id == info.id);
-			if (index == -1) return;
-			this.texts[index].favorite = !this.texts[index].favorite;
-			if (!this.texts[index].favorite) {
-				var index = this.textsFavorite.findIndex((e) => e.id == info.id);
-				if (index == -1) return;
-				this.textsFavorite.splice(index, 1);
+			var textsIndex = this.texts.findIndex((e) => e.id == info.id);
+			var favoriteIndex = this.textsFavorite.findIndex((e) => e.id == info.id);
+			if (textsIndex == -1 && favoriteIndex == -1) return;
+
+			if (favoriteIndex == -1) {
+				this.texts[textsIndex].favorite = true;
+				this.textsFavorite.unshift(this.texts[textsIndex]);
 			} else {
-				this.textsFavorite.unshift(this.texts[index]);
+				if (this.texts[textsIndex]) this.texts[textsIndex].favorite = false;
+				this.textsFavorite.splice(favoriteIndex, 1);
 			}
 		}
 
 		if (info.type == "file") {
-			var index = this.files.findIndex((e) => e.id == info.id);
-			if (index == -1) return;
-			this.files[index].favorite = !this.files[index].favorite;
-			if (!this.files[index].favorite) {
-				var index = this.filesFavorite.findIndex((e) => e.id == info.id);
-				if (index == -1) return;
-				this.filesFavorite.splice(index, 1);
+			var filesIndex = this.files.findIndex((e) => e.id == info.id);
+			var favoriteIndex = this.filesFavorite.findIndex((e) => e.id == info.id);
+			if (filesIndex == -1 && favoriteIndex == -1) return;
+
+			if (favoriteIndex == -1) {
+				this.files[filesIndex].favorite = true;
+				this.filesFavorite.unshift(this.files[filesIndex]);
 			} else {
-				this.filesFavorite.unshift(this.files[index]);
+				if (this.files[filesIndex]) this.files[filesIndex].favorite = false;
+				this.filesFavorite.splice(favoriteIndex, 1);
 			}
 		}
 	});
