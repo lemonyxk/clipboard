@@ -40,6 +40,8 @@ function createMenu() {
 		app.commandLine.appendSwitch("wm-window-animations-disabled");
 		Menu.setApplicationMenu(null);
 	}
+
+	app.commandLine.appendSwitch("disable-features", "CalculateNativeWinOcclusion");
 }
 
 module.exports = { createMenu };

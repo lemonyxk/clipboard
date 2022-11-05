@@ -3,7 +3,7 @@ import { store } from "./store";
 import { getCurrentInstance } from "vue";
 
 var onList = {};
-var config = { pin: false, favorite: false };
+var config = { pin: false, favorite: false, preview: false };
 var setting = store.get("setting") || {};
 var key = true;
 

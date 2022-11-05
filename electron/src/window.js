@@ -29,6 +29,7 @@ function createMainWindow() {
 			contextIsolation: false,
 			// webSecurity: false,
 			nodeIntegrationInWorker: true,
+			backgroundThrottling: false,
 		},
 	});
 
@@ -110,6 +111,7 @@ function createSettingWindow() {
 			contextIsolation: false,
 
 			nodeIntegrationInWorker: true,
+			backgroundThrottling: false,
 		},
 	});
 
@@ -177,6 +179,7 @@ function createAboutWindow() {
 			contextIsolation: false,
 
 			nodeIntegrationInWorker: true,
+			backgroundThrottling: false,
 		},
 	});
 

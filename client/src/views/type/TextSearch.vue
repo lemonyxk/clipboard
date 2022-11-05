@@ -65,7 +65,7 @@ var previewTop = ref(0);
 var mouseenterHandler = null;
 var previewHandler = null;
 
-function preview(itemRef) {
+function preview(itemRef, duration) {
 	clearTimeout(previewHandler);
 	previewHandler = setTimeout(() => {
 		if (hoverIndex < 0) return;
@@ -81,7 +81,8 @@ function preview(itemRef) {
 		previewTop.value = top + "px";
 
 		previewShow.value = true;
-	}, 100);
+		subscription.config().preview = true;
+	}, duration || 100);
 }
 
 function mouseenter(item, i) {
@@ -89,11 +90,11 @@ function mouseenter(item, i) {
 	hoverIndex = i;
 }
 
-function mouseleave(item) {
+function mouseleave(duration) {
 	if (!previewShow.value) return;
 	mouseenterHandler = setTimeout(() => {
 		previewMouseLeave();
-	}, 200);
+	}, duration || 200);
 }
 
 function previewMouseEnter() {
@@ -102,6 +103,7 @@ function previewMouseEnter() {
 
 function previewMouseLeave() {
 	previewShow.value = false;
+	subscription.config().preview = false;
 	window.getSelection().empty();
 }
 
@@ -168,7 +170,16 @@ onActivated(() => {
 		}
 
 		if (e.code == "Space") {
-			preview(itemRef.value[hoverIndex]);
+			if (!previewShow.value) {
+				preview(itemRef.value[hoverIndex], 10);
+			} else {
+				mouseleave(10);
+			}
+			return;
+		}
+
+		if (e.code == "Escape") {
+			mouseleave(10);
 			return;
 		}
 

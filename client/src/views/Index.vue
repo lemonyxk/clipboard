@@ -24,6 +24,14 @@ var show = ref(true);
 var input = ref();
 var searchText = ref("");
 
+subscription.on("mainWindow-focus", () => {
+	show.value = true;
+});
+
+subscription.on("mainWindow-hide", () => {
+	show.value = false;
+});
+
 function resetSearch() {
 	searchText.value = "";
 	input.value.blur();
@@ -96,7 +104,7 @@ subscription.on("onkeydown", (e) => {
 	if (e.code == "Escape") {
 		if (searchText.value == "" && !input.value.active) {
 			// DISABLE MAC NOISE
-			requestAnimationFrame(() => send("hide-window"));
+			requestAnimationFrame(() => !subscription.config().preview && send("hide-window"));
 		} else {
 			searchText.value = "";
 			onBlur();

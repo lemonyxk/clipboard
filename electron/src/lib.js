@@ -2,10 +2,23 @@ const { clipboard, dialog, nativeImage } = require("electron");
 const fs = require("fs");
 const path = require("path");
 
-const icon = nativeImage.createFromPath(path.join(__dirname, "copyTemplate.png"));
+const icon = nativeImage.createFromPath(path.join(__dirname, "clipboard.png"));
 
 function showMessage(message) {
-	return dialog.showMessageBox(null, { message, type: "info", icon: icon });
+	return dialog
+		.showMessageBox(null, {
+			icon: icon,
+			type: "info",
+			buttons: ["OK"],
+			defaultId: 0,
+			message: message,
+			// title: "Clipboard Manager Infomation",
+			// message: "Clipboard Manager Infomation",
+			// detail: message,
+			// checkboxLabel: "Remember my answer",
+			// checkboxChecked: true,
+		})
+		.then((response) => {});
 }
 
 var exportDataFlag = false;
