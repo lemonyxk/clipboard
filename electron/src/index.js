@@ -1,5 +1,4 @@
-const { app, BrowserWindow, powerMonitor } = require("electron");
-const { globalShortcut, clipboard } = require("electron");
+const { app, clipboard } = require("electron");
 const Store = require("electron-store");
 const path = require("path");
 const fs = require("fs");
@@ -8,6 +7,7 @@ const { createMainWindow, createSettingWindow, createAboutWindow } = require("./
 const { createTray } = require("./tray");
 const { ipc } = require("./ipcMain");
 const { createMenu } = require("./menu");
+const { startApp } = require("./startApp");
 
 class Main {
 	// window handler
@@ -47,11 +47,22 @@ class Main {
 
 	init() {
 		if (!this.dev) {
-			var log = path.join(__dirname, "log");
+			var log = path.join(__dirname, "clipboard.log");
 			var fd = fs.openSync(log, "a+");
 			console.log = (...args) => {
-				fs.writeSync(fd, new Date().toISOString() + " " + args.toString() + "\n");
+				var str = "";
+				for (let i = 0; i < args.length; i++) {
+					str += args[i].toString();
+					if (i != args.length - 1) {
+						str += " ";
+					} else {
+						str += "\n";
+					}
+				}
+
+				fs.writeSync(fd, `${new Date().toISOString()}: ${str}`);
 			};
+			console.log("init success");
 		}
 	}
 
@@ -73,6 +84,8 @@ class Main {
 		if (this.config.maxLength > 10000) this.config.maxLength = 10000;
 
 		this.store.set("setting", this.config);
+
+		console.log("setting update", this.config);
 	}
 
 	find(pid) {
@@ -86,7 +99,7 @@ class Main {
 	unlock() {
 		try {
 			fs.rmSync(this.lock);
-		} catch (error) {
+		} catch (err) {
 			console.log(this.lock, "not exists");
 		}
 	}
@@ -95,6 +108,7 @@ class Main {
 		if (fs.existsSync(this.lock)) {
 			var pid = fs.readFileSync(this.lock).toString();
 			if (this.find(parseInt(pid))) {
+				console.log("pid not find");
 				return false;
 			}
 		}
@@ -102,62 +116,6 @@ class Main {
 		fs.writeFileSync(this.lock, `${process.pid}`);
 
 		return true;
-	}
-
-	lisnten() {
-		// This method will be called when Electron has finished
-		// initialization and is ready to create browser windows.
-		// Some APIs can only be used after this event occurs.
-		app.on("ready", () => {
-			var key = lib.isMac() ? "Command" : "Alt";
-
-			globalShortcut.register(`${key}+P`, () => {
-				var win = BrowserWindow.getFocusedWindow();
-				if (!win) return;
-				if (win.webContents.isDevToolsOpened()) {
-					win.webContents.closeDevTools();
-				} else {
-					win.webContents.openDevTools();
-				}
-			});
-
-			globalShortcut.register(`${key}+B`, () => {
-				this.mainWindow.show();
-			});
-
-			console.log(globalShortcut.isRegistered("CommandOrControl+P"));
-			console.log("main pid", process.pid);
-
-			this.setting();
-
-			this.createMainWindow();
-			this.createAboutWindow();
-			this.createSettingWindow();
-
-			this.initTray();
-			this.ipcMain();
-
-			this.startLoop();
-		});
-
-		// Quit when all windows are closed.
-		app.on("window-all-closed", () => {
-			console.log("on window-all-closed");
-			// On OS X it is common for applications and their menu bar
-			// to stay active until the user quits explicitly with Cmd + Q
-			if (!lib.isMac()) {
-				console.log("maybe is time to quit");
-			}
-		});
-
-		app.on("activate", () => {
-			console.log("on activate");
-			// On OS X it's common to re-create a window in the app when the
-			// dock icon is clicked and there are no other windows open.
-			if (BrowserWindow.getAllWindows().length === 0) {
-				console.log("maybe is time to create a new one");
-			}
-		});
 	}
 
 	createSettingWindow() {
@@ -172,7 +130,7 @@ class Main {
 		this.mainWindow = createMainWindow.call(this);
 	}
 
-	initTray() {
+	createTray() {
 		if (this.tray) return;
 		this.tray = createTray.call(this);
 	}
@@ -184,6 +142,7 @@ class Main {
 	stopLoop() {
 		clearInterval(this.saveTimer);
 		clearInterval(this.filesTimer);
+		console.log("stop loop");
 	}
 
 	startLoop() {
@@ -226,6 +185,8 @@ class Main {
 				});
 			}
 		}, 500);
+
+		console.log("start loop");
 	}
 
 	save() {
@@ -233,13 +194,17 @@ class Main {
 		this.store.set("files", this.files);
 		this.store.set("textsFavorite", this.textsFavorite);
 		this.store.set("filesFavorite", this.filesFavorite);
-		console.log("save at", new Date().toISOString());
+		console.log("save data success");
 	}
 
 	quit() {
 		this.save();
 		this.unlock();
 		app.exit();
+	}
+
+	run() {
+		startApp.call(this);
 	}
 
 	start() {
@@ -249,14 +214,7 @@ class Main {
 
 		createMenu.call(this);
 
-		app.allowRendererProcessReuse = true;
-
-		powerMonitor.on("lock-screen", () => {
-			console.log("lock-screen");
-			this.save();
-		});
-
-		this.lisnten();
+		this.run();
 	}
 }
 

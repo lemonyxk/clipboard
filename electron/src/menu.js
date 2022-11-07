@@ -42,6 +42,8 @@ function createMenu() {
 	}
 
 	app.commandLine.appendSwitch("disable-features", "CalculateNativeWinOcclusion");
+
+	app.allowRendererProcessReuse = true;
 }
 
 module.exports = { createMenu };

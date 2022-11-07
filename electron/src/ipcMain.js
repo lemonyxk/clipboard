@@ -1,6 +1,5 @@
-const { ipcMain, clipboard, nativeImage, app, shell, dialog } = require("electron");
+const { ipcMain, clipboard, nativeImage, app, shell } = require("electron");
 const lib = require("./lib");
-const path = require("path");
 const fs = require("fs");
 
 function ipc() {
@@ -94,7 +93,7 @@ function ipc() {
 				var img = await nativeImage.createThumbnailFromPath(`${item.text}`, { width: 256, height: 256 });
 				var data = img.toPNG().toString("base64");
 				this.mainWindow.webContents.send("load-image", `data:${`image/png`};base64,${data}`);
-			} catch (error) {
+			} catch (err) {
 				var img = await app.getFileIcon(`${item.text}`);
 				var data = img.toPNG().toString("base64");
 				this.mainWindow.webContents.send("load-image", `data:${`image/png`};base64,${data}`);
@@ -198,36 +197,68 @@ function ipc() {
 	ipcMain.on("get-clipboard-text-search", (e, info) => {
 		var filter = info.filter;
 		var source = info.favorite ? this.textsFavorite : this.texts;
-		var regex = new RegExp(filter);
 		var res = [];
-		for (let i = 0; i < source.length; i++) {
-			if (regex.test(source[i].text)) {
-				res.push(source[i]);
+
+		try {
+			if (!filter) return;
+			if (filter[0] == "`" && filter[filter.length - 1] == "`") {
+				var regex = new RegExp(filter.slice(1, -1));
+				for (let i = 0; i < source.length; i++) {
+					if (regex.test(source[i].text)) {
+						res.push(source[i]);
+					}
+				}
+			} else {
+				for (let i = 0; i < source.length; i++) {
+					if (source[i].text.includes(filter)) {
+						res.push(source[i]);
+					}
+				}
 			}
+		} catch (err) {
+			console.log(err);
+		} finally {
+			this.mainWindow.webContents.send("get-clipboard-text-search", {
+				data: res,
+				total: res.length,
+				size: this.config.pageSize,
+			});
 		}
-		this.mainWindow.webContents.send("get-clipboard-text-search", {
-			data: res,
-			total: res.length,
-			size: this.config.pageSize,
-		});
 	});
 
 	ipcMain.on("get-clipboard-file-search", (e, info) => {
 		var filter = info.filter;
 		var source = info.favorite ? this.filesFavorite : this.files;
-		var regex = new RegExp(filter);
 		var res = [];
-		for (let i = 0; i < source.length; i++) {
-			if (regex.test(source[i].text)) {
-				res.push(source[i]);
+
+		try {
+			if (!filter) return;
+			if (filter[0] == "`" && filter[filter.length - 1] == "`") {
+				var regex = new RegExp(filter.slice(1, -1));
+				for (let i = 0; i < source.length; i++) {
+					if (regex.test(source[i].text)) {
+						res.push(source[i]);
+					}
+				}
+			} else {
+				for (let i = 0; i < source.length; i++) {
+					if (source[i].text.includes(filter)) {
+						res.push(source[i]);
+					}
+				}
 			}
+		} catch (err) {
+			console.log(err);
+		} finally {
+			this.mainWindow.webContents.send("get-clipboard-file-search", {
+				data: res,
+				total: res.length,
+				size: this.config.pageSize,
+			});
 		}
-		this.mainWindow.webContents.send("get-clipboard-file-search", {
-			data: res,
-			total: res.length,
-			size: this.config.pageSize,
-		});
 	});
+
+	console.log("create ipcMain success");
 }
 
 module.exports = { ipc };

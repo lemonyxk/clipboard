@@ -68,6 +68,8 @@ function createTray() {
 		this.mainWindow.show();
 	});
 
+	console.log("create tray success");
+
 	return tray;
 }
 

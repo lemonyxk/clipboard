@@ -51,6 +51,10 @@ function createMainWindow() {
 		mainWindow.webContents.send("mainWindow-hide");
 	});
 
+	mainWindow.on("show", (e) => {
+		mainWindow.webContents.send("mainWindow-show");
+	});
+
 	mainWindow.on("close", (e) => {
 		if (dev) return this.quit();
 		e.preventDefault();
@@ -67,7 +71,7 @@ function createMainWindow() {
 	});
 
 	mainWindow.webContents.on("dom-ready", () => {
-		console.log("dom-ready");
+		console.log("main window dom-ready");
 	});
 
 	// and load the index.html of the app.
@@ -79,6 +83,8 @@ function createMainWindow() {
 
 	// Open the DevTools.
 	if (dev) mainWindow.webContents.openDevTools();
+
+	console.log("create main window success");
 
 	return mainWindow;
 }
@@ -121,6 +127,10 @@ function createSettingWindow() {
 		settingWindow.webContents.send("settingWindow-hide");
 	});
 
+	settingWindow.on("show", (e) => {
+		settingWindow.webContents.send("settingWindow-show");
+	});
+
 	settingWindow.on("close", (e) => {
 		e.preventDefault();
 		settingWindow.hide();
@@ -136,7 +146,7 @@ function createSettingWindow() {
 	});
 
 	settingWindow.webContents.on("dom-ready", () => {
-		console.log("dom-ready");
+		console.log("setting windows dom-ready");
 	});
 
 	// and load the index.html of the app.
@@ -147,6 +157,8 @@ function createSettingWindow() {
 	}
 
 	if (dev) settingWindow.webContents.openDevTools();
+
+	console.log("create setting window success");
 
 	return settingWindow;
 }
@@ -186,7 +198,11 @@ function createAboutWindow() {
 	aboutWindow.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true });
 
 	aboutWindow.on("hide", (e) => {
-		aboutWindow.webContents.send("settingWindow-hide");
+		aboutWindow.webContents.send("aboutWindow-hide");
+	});
+
+	aboutWindow.on("show", (e) => {
+		aboutWindow.webContents.send("aboutWindow-show");
 	});
 
 	aboutWindow.on("close", (e) => {
@@ -204,7 +220,7 @@ function createAboutWindow() {
 	});
 
 	aboutWindow.webContents.on("dom-ready", () => {
-		console.log("dom-ready");
+		console.log("about window dom-ready");
 	});
 
 	// and load the index.html of the app.
@@ -215,6 +231,8 @@ function createAboutWindow() {
 	}
 
 	if (dev) aboutWindow.webContents.openDevTools();
+
+	console.log("create about window success");
 
 	return aboutWindow;
 }
