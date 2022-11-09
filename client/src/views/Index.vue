@@ -160,8 +160,8 @@ subscription.on("onkeydown", (e) => {
 				<div class="pin" v-if="isPin"><img :src="pined" @click="onPin" title="UnPin" /></div>
 				<div class="pin" v-else><img :src="pin" @click="onPin" title="Pined" /></div>
 			</div>
-			<div class="right">
-				<router-view v-slot="{ Component }" v-if="show">
+			<div class="right" v-show="show">
+				<router-view v-slot="{ Component }">
 					<keep-alive>
 						<component :is="Component" :key="$route.fullPath" />
 					</keep-alive>

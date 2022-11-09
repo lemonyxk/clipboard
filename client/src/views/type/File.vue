@@ -268,7 +268,9 @@ onActivated(() => {
 
 			return;
 		}
+	});
 
+	subscription.on("onkeyup", (e) => {
 		if (e.code == "Space") {
 			if (!previewShow.value) {
 				preview(itemRef.value[hoverIndex], 10);
@@ -305,6 +307,7 @@ onActivated(() => {
 
 onDeactivated(() => {
 	subscription.remove("onkeydown");
+	subscription.remove("onkeyup");
 });
 
 function onDelete(item) {

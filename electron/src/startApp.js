@@ -24,7 +24,11 @@ function startApp() {
 		console.log(
 			`register globalShortcut ${key}+B`,
 			globalShortcut.register(`${key}+B`, () => {
-				this.mainWindow.show();
+				if (this.mainWindow.isShow) {
+					this.mainWindow.hide();
+				} else {
+					this.mainWindow.show();
+				}
 			})
 		);
 

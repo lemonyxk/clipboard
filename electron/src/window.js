@@ -33,6 +33,8 @@ function createMainWindow() {
 		},
 	});
 
+	mainWindow.isShow = false;
+
 	mainWindow.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true });
 
 	mainWindow.webContents.on("before-input-event", (event, input) => {
@@ -49,10 +51,12 @@ function createMainWindow() {
 
 	mainWindow.on("hide", (e) => {
 		mainWindow.webContents.send("mainWindow-hide");
+		mainWindow.isShow = false;
 	});
 
 	mainWindow.on("show", (e) => {
 		mainWindow.webContents.send("mainWindow-show");
+		mainWindow.isShow = true;
 	});
 
 	mainWindow.on("close", (e) => {

@@ -65,7 +65,11 @@ function createTray() {
 
 	tray.on("click", (e, b, p) => {
 		tray.setContextMenu(null);
-		this.mainWindow.show();
+		if (this.mainWindow.isShow) {
+			this.mainWindow.hide();
+		} else {
+			this.mainWindow.show();
+		}
 	});
 
 	console.log("create tray success");
