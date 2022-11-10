@@ -113,8 +113,7 @@
 .preview {
 	width: 100%;
 	height: 200px;
-	// background-color: rgba($color: #efefef, $alpha: 1);
+	background-color: rgba(0, 0, 0, 0);
 	position: absolute;
 	top: 0;
-	animation: widthAnimation 0.2s ease-out;
 }

@@ -32,10 +32,11 @@
 			></v-pagination>
 		</div>
 	</div>
-
-	<div class="preview" v-show="previewShow" :style="{ top: previewTop }" @mouseenter="previewMouseEnter" @mouseleave="previewMouseLeave">
-		<Preview :data="previewItem"></Preview>
-	</div>
+	<transition name="fade">
+		<div class="preview" v-show="previewShow" :style="{ top: previewTop }" @mouseenter="previewMouseEnter" @mouseleave="previewMouseLeave">
+			<Preview :data="previewItem"></Preview>
+		</div>
+	</transition>
 </template>
 
 <script setup>
@@ -66,10 +67,9 @@ var mouseenterHandler = null;
 var previewHandler = null;
 
 function preview(itemRef, duration) {
+	if (hoverIndex < 0) return;
 	clearTimeout(previewHandler);
 	previewHandler = setTimeout(() => {
-		if (hoverIndex < 0) return;
-
 		previewItem.value = { item: items.value.data[hoverIndex], blob: "" };
 
 		var react = itemRef.getBoundingClientRect();
@@ -82,19 +82,21 @@ function preview(itemRef, duration) {
 
 		previewShow.value = true;
 		subscription.config().preview = true;
-	}, duration || 100);
+	}, parseInt(duration) || 100);
 }
 
 function mouseenter(item, i) {
-	hoverId.value = item.id;
-	hoverIndex = i;
+	requestAnimationFrame(() => {
+		hoverId.value = item.id;
+		hoverIndex = i;
+	});
 }
 
 function mouseleave(duration) {
 	if (!previewShow.value) return;
 	mouseenterHandler = setTimeout(() => {
 		previewMouseLeave();
-	}, duration || 200);
+	}, parseInt(duration) || 200);
 }
 
 function previewMouseEnter() {
@@ -102,9 +104,12 @@ function previewMouseEnter() {
 }
 
 function previewMouseLeave() {
-	previewShow.value = false;
-	subscription.config().preview = false;
-	window.getSelection().empty();
+	if (!previewShow.value) return;
+	requestAnimationFrame(() => {
+		previewShow.value = false;
+		subscription.config().preview = false;
+		window.getSelection().empty();
+	});
 }
 
 var data = {};
@@ -175,13 +180,13 @@ onActivated(() => {
 			if (!previewShow.value) {
 				preview(itemRef.value[hoverIndex], 10);
 			} else {
-				mouseleave(10);
+				mouseleave(100);
 			}
 			return;
 		}
 
 		if (e.code == "Escape") {
-			mouseleave(10);
+			mouseleave(100);
 			return;
 		}
 

@@ -24,4 +24,10 @@ var format = (arr) => {
 	return res;
 };
 
-export { format, createTimeTittle };
+var delay = (duration) => {
+	return {
+		then: (fn) => new Promise((r, j) => setTimeout(() => r(), duration)).then(() => fn()),
+	};
+};
+
+export { format, createTimeTittle, delay };

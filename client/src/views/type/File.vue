@@ -36,10 +36,11 @@
 			></v-pagination>
 		</div>
 	</div>
-
-	<div class="preview" v-show="previewShow" :style="{ top: previewTop }" @mouseenter="previewMouseEnter" @mouseleave="previewMouseLeave">
-		<Preview :data="previewItem"> </Preview>
-	</div>
+	<transition name="fade">
+		<div class="preview" v-show="previewShow" :style="{ top: previewTop }">
+			<Preview :data="previewItem" @mouseenter="previewMouseEnter" @mouseleave="previewMouseLeave"> </Preview>
+		</div>
+	</transition>
 
 	<div class="rightMenu" ref="rightMenu" @blur="rightMenuBlur" v-show="rightMenuShow" :style="{ ...rightMenuPos }" :tabindex="0">
 		<v-card class="content">
@@ -163,14 +164,13 @@ var rightMenuBlurHandler = null;
 var previewHandler = null;
 
 function preview(itemRef, duration) {
+	if (hoverIndex < 0) return;
 	clearTimeout(previewHandler);
-	previewHandler = setTimeout(() => {
-		if (hoverIndex < 0) return;
 
-		send("load-image", { ...items.value.data[hoverIndex] }).then((data) => {
-			if (!data) items.value.data[hoverIndex].deleted = true;
-			previewItem.value = { item: items.value.data[hoverIndex], blob: data };
-		});
+	previewHandler = setTimeout(() => {
+		// NEED A DEFAULT VALUE
+		// OR IT WILL FLICKER AND TRIGGER MOUSEENTER AND MOUSELEAVE
+		previewItem.value = { item: items.value.data[hoverIndex], blob: "" };
 
 		var react = itemRef.getBoundingClientRect();
 		var top = react.bottom - 42;
@@ -180,15 +180,22 @@ function preview(itemRef, duration) {
 		}
 		previewTop.value = top + "px";
 
+		send("load-image", { ...items.value.data[hoverIndex] }).then((data) => {
+			if (!data) items.value.data[hoverIndex].deleted = true;
+			previewItem.value = { item: items.value.data[hoverIndex], blob: data };
+		});
+
 		previewShow.value = true;
 		subscription.config().preview = true;
-	}, duration || 100);
+	}, parseInt(duration) || 100);
 }
 
 function mouseenter(item, i) {
 	if (!shouldHover) return;
-	hoverId.value = item.id;
-	hoverIndex = i;
+	requestAnimationFrame(() => {
+		hoverId.value = item.id;
+		hoverIndex = i;
+	});
 }
 
 function mouseleave(duration) {
@@ -196,7 +203,7 @@ function mouseleave(duration) {
 	if (!previewShow.value) return;
 	mouseenterHandler = setTimeout(() => {
 		previewMouseLeave();
-	}, duration || 200);
+	}, parseInt(duration) || 200);
 }
 
 function previewMouseEnter() {
@@ -204,9 +211,12 @@ function previewMouseEnter() {
 }
 
 function previewMouseLeave() {
-	previewShow.value = false;
-	subscription.config().preview = false;
-	window.getSelection().empty();
+	if (!previewShow.value) return;
+	requestAnimationFrame(() => {
+		previewShow.value = false;
+		subscription.config().preview = false;
+		window.getSelection().empty();
+	});
 }
 
 onActivated(() => {
@@ -275,13 +285,13 @@ onActivated(() => {
 			if (!previewShow.value) {
 				preview(itemRef.value[hoverIndex], 10);
 			} else {
-				mouseleave(10);
+				mouseleave(100);
 			}
 			return;
 		}
 
 		if (e.code == "Escape") {
-			mouseleave(10);
+			mouseleave(100);
 			return;
 		}
 

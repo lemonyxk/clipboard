@@ -161,7 +161,27 @@ body {
 	}
 }
 
-.widthAnimation {
-	animation: widthAnimation 0.2s;
+@keyframes widthAnimationEnd {
+	0% {
+		scale: 1;
+		opacity: 1;
+	}
+
+	50% {
+		scale: 0.3;
+	}
+
+	100% {
+		scale: 0;
+		opacity: 0.5;
+	}
+}
+
+.fade-enter-active {
+	animation: widthAnimation 0.15s;
+}
+
+.fade-leave-active {
+	animation: widthAnimationEnd 0.2s;
 }
 </style>

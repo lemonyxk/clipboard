@@ -6,17 +6,16 @@
 
 		<div class="file" v-if="props.data.blob != ''">
 			<v-card>
-				<img :src="props.data.blob" />
+				<img :src="props.data.blob" @load="onLoadImg" />
 			</v-card>
 		</div>
 	</div>
 </template>
 
 <script setup>
-import { send } from "@/lib/ipc";
-import { onUpdated, ref } from "vue";
-
 var props = defineProps({ data: Object });
+
+function onLoadImg() {}
 
 //
 </script>
@@ -29,18 +28,17 @@ var props = defineProps({ data: Object });
 	display: flex;
 	justify-content: flex-start;
 	align-items: center;
-	// background-color: rgba($color: #333, $alpha: 0.8);
+	background-color: rgba(0, 0, 0, 0);
 
 	.text {
 		width: 69%;
 		height: 100%;
 		user-select: text;
 		overflow: auto;
-		// background-color: #e4dfd1;
-		background-color: rgba($color: #f3f3f3, $alpha: 0.7);
+		background-color: rgba($color: rgb(205, 205, 227), $alpha: 0.3);
 		backdrop-filter: blur(6px);
 		padding: 4px;
-		color: #222;
+		color: #000;
 	}
 
 	.file {
