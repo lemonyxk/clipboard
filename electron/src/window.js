@@ -80,7 +80,7 @@ function createMainWindow() {
 
 	// and load the index.html of the app.
 	if (dev) {
-		mainWindow.loadURL("http://127.0.0.1:8081");
+		mainWindow.loadURL("http://127.0.0.1:8080");
 	} else {
 		mainWindow.loadFile(path.join(__dirname, "/dist/index.html"));
 	}
@@ -155,7 +155,7 @@ function createSettingWindow() {
 
 	// and load the index.html of the app.
 	if (dev) {
-		settingWindow.loadURL("http://127.0.0.1:8081/#/setting");
+		settingWindow.loadURL("http://127.0.0.1:8080/#/setting");
 	} else {
 		settingWindow.loadFile(path.join(__dirname, "/dist/index.html"), { hash: "/setting" });
 	}
@@ -229,7 +229,7 @@ function createAboutWindow() {
 
 	// and load the index.html of the app.
 	if (dev) {
-		aboutWindow.loadURL("http://127.0.0.1:8081/#/about");
+		aboutWindow.loadURL("http://127.0.0.1:8080/#/about");
 	} else {
 		aboutWindow.loadFile(path.join(__dirname, "/dist/index.html"), { hash: "/about" });
 	}

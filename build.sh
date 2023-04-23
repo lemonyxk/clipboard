@@ -14,9 +14,14 @@ function buildClient() {
     cp -R client/dist/* electron/src/dist
 }
 
-function buildMacElectron() {
+function buildMacArm64Electron() {
     cd "$electron" || exit
-    yarn make
+    yarn package --arch=arm64 --platform=darwin
+}
+
+function buildMacX64Electron() {
+    cd "$electron" || exit
+    yarn package --arch=x64 --platform=darwin
 }
 
 function buildWindowsElectron() {
@@ -29,11 +34,25 @@ if [ "$1" == mac ]; then
 
     if [ "$2" == all ]; then
         buildClient
-        buildMacElectron
+        if [ "$3" == arm64 ]; then
+            buildMacArm64Electron
+        elif [ "$3" == x64 ]; then
+            buildMacX64Electron
+        else
+            buildMacArm64Electron
+            buildMacX64Electron
+        fi
     elif [ "$2" == client ]; then
         buildClient
     elif [ "$2" == electron ]; then
-        buildMacElectron
+        if [ "$3" == arm64 ]; then
+            buildMacArm64Electron
+        elif [ "$3" == x64 ]; then
+            buildMacX64Electron
+        else
+            buildMacArm64Electron
+            buildMacX64Electron
+        fi
     else
         echo "no build target"
         exit

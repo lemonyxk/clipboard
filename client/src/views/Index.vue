@@ -25,11 +25,15 @@ var input = ref();
 var searchText = ref("");
 
 subscription.on("mainWindow-focus", () => {
-	show.value = true;
+	requestAnimationFrame(() => {
+		show.value = true;
+	});
 });
 
 subscription.on("mainWindow-hide", () => {
-	show.value = false;
+	requestAnimationFrame(() => {
+		show.value = false;
+	});
 });
 
 function resetSearch() {
@@ -151,10 +155,14 @@ subscription.on("onkeydown", (e) => {
 				<div class="text" v-if="isText"><img :src="texted" @click="onText" title="Text Mode" /></div>
 				<div class="text" v-else><img :src="text" @click="onText" title="Document Mode" /></div>
 
-				<div class="document" v-if="isDocument"><img :src="documented" @click="onDocument" title="Document Mode" /></div>
+				<div class="document" v-if="isDocument">
+					<img :src="documented" @click="onDocument" title="Document Mode" />
+				</div>
 				<div class="document" v-else><img :src="document" @click="onDocument" title="Text Mode" /></div>
 
-				<div class="favorite" v-if="isFavorite"><img :src="hearted" @click="onFavorite" title="Favorite Mode" /></div>
+				<div class="favorite" v-if="isFavorite">
+					<img :src="hearted" @click="onFavorite" title="Favorite Mode" />
+				</div>
 				<div class="favorite" v-else><img :src="heart" @click="onFavorite" title="Favorite Mode" /></div>
 
 				<div class="pin" v-if="isPin"><img :src="pined" @click="onPin" title="UnPin" /></div>
