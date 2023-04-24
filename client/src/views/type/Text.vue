@@ -1,5 +1,5 @@
 <template>
-	<div class="middle" :class="className" ref="middle">
+	<div class="middle" :class="className" ref="middle" @mouseleave="leave">
 		<div
 			class="item"
 			v-for="(item, i) in items.data"
@@ -17,7 +17,9 @@
 					<img :src="hearted" :hidden="!item.favorite" v-if="item.favorite" @click="onHeart(item)" />
 					<img :src="heart" :hidden="hoverId != item.id" v-else @click="onHeart(item)" />
 				</div>
-				<div class="time" :style="{ color: [`#333`, `green`, `#999`, `cornflowerblue`][item.time % 4] }">{{ item.date }}</div>
+				<div class="time" :style="{ color: [`#333`, `green`, `#999`, `cornflowerblue`][item.time % 4] }">
+					{{ item.date }}
+				</div>
 			</div>
 		</div>
 	</div>
@@ -33,7 +35,13 @@
 		</div>
 	</div>
 	<transition name="fade">
-		<div class="preview" v-show="previewShow" :style="{ top: previewTop }" @mouseenter="previewMouseEnter" @mouseleave="previewMouseLeave">
+		<div
+			class="preview"
+			v-show="previewShow"
+			:style="{ top: previewTop }"
+			@mouseenter="previewMouseEnter"
+			@mouseleave="previewMouseLeave"
+		>
 			<Preview :data="previewItem"></Preview>
 		</div>
 	</transition>
@@ -91,6 +99,11 @@ function preview(itemRef, duration) {
 		previewShow.value = true;
 		subscription.config().preview = true;
 	}, parseInt(duration) || 100);
+}
+
+function leave() {
+	hoverIndex = -1;
+	hoverId.value = null;
 }
 
 function mouseenter(item, i) {
