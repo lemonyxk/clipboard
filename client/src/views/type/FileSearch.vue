@@ -187,7 +187,7 @@ function preview(itemRef, duration) {
 		previewTop.value = top + "px";
 
 		send("load-image", { ...items.value.data[hoverIndex] }).then((data) => {
-			if (!data) items.value.data[hoverIndex].deleted = true;
+			if (data == null) items.value.data[hoverIndex].deleted = true;
 			previewItem.value = { item: items.value.data[hoverIndex], blob: data };
 		});
 

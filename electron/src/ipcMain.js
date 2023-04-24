@@ -79,7 +79,7 @@ function ipc() {
 
 		if (!fs.existsSync(item.text)) {
 			fn();
-			return this.mainWindow.webContents.send("load-image");
+			return this.mainWindow.webContents.send("load-image", null);
 		}
 
 		if (lib.isMac()) {
