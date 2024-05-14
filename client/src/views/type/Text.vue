@@ -9,8 +9,8 @@
 			@mouseenter="mouseenter(item, i)"
 			@mouseleave="mouseleave(item, i)"
 		>
-			<div v-if="setting.clickToCopy" class="value" @click="onSelect(item)">{{ item.text }}</div>
-			<div v-else class="value" @dblclick="onSelect(item)">{{ item.text }}</div>
+			<div v-if="setting.clickToCopy" class="value" @click="onSelect(item)">{{ item.text.length > 512 ? item.text.slice(0, 512) + "..." : item.text }}</div>
+			<div v-else class="value" @dblclick="onSelect(item)">{{ item.text.length > 512 ? item.text.slice(0, 512) + "..." : item.text }}</div>
 
 			<div class="title">
 				<div class="favorite">
@@ -25,23 +25,11 @@
 	</div>
 	<div class="bottom">
 		<div class="left">
-			<v-pagination
-				v-model="page"
-				:length="getLen()"
-				:total-visible="6"
-				density="compact"
-				v-on:update:model-value="onPageChange"
-			></v-pagination>
+			<v-pagination v-model="page" :length="getLen()" :total-visible="6" density="compact" v-on:update:model-value="onPageChange"></v-pagination>
 		</div>
 	</div>
 	<transition name="fade">
-		<div
-			class="preview"
-			v-show="previewShow"
-			:style="{ top: previewTop }"
-			@mouseenter="previewMouseEnter"
-			@mouseleave="previewMouseLeave"
-		>
+		<div class="preview" v-show="previewShow" :style="{ top: previewTop }" @mouseenter="previewMouseEnter" @mouseleave="previewMouseLeave">
 			<Preview :data="previewItem"></Preview>
 		</div>
 	</transition>

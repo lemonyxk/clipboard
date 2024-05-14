@@ -11,6 +11,7 @@ function buildClient() {
     # clean resources
     cd "$current" || exit
     rm -rf electron/src/dist/*
+    mkdir electron/src/dist
     cp -R client/dist/* electron/src/dist
 }
 
